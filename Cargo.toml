@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 rustc-tools = "0.1.2"
+if_chain = "1.0"
+# clippy_utils = { path = "clippy_utils" }
