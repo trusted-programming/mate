@@ -64,14 +64,12 @@ impl LateLintPass<'_> for MissingDebugImplementations {
             .is_some();
 
         if !has_impl {
-            if !has_impl {
-                cx.struct_span_lint(
-                    MISSING_DEBUG_IMPLEMENTATIONS,
-                    item.span,
-                    "consider using a more meaningful DEBUG",
-                    |diag| diag,
-                );
-            }
+            cx.struct_span_lint(
+                MISSING_DEBUG_IMPLEMENTATIONS,
+                item.span,
+                "consider using a more meaningful DEBUG",
+                |diag| diag,
+            );
         }
     }
 }
