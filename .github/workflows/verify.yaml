@@ -15,10 +15,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Install nightly-2023-03-02
+      - name: Install nightly-2023-08-24
         uses: dtolnay/rust-toolchain@master
           with:
-            toolchain: nightly-2023-03-02
+            toolchain: nightly-2023-08-24
             components: rustfmt
 
       - name: cargo fmt --check
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [nightly-2023-03-02]
+        toolchain: [nightly-2023-08-24]
     steps:
       - uses: actions/checkout@v4
         with:

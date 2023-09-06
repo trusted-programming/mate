@@ -5,6 +5,7 @@
 #![feature(lint_reasons)]
 #![feature(never_type)]
 #![feature(rustc_private)]
+#![feature(assert_matches)]
 #![recursion_limit = "512"]
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
 #![allow(clippy::missing_errors_doc, clippy::missing_panics_doc, clippy::must_use_candidate)]
@@ -83,40 +84,41 @@ use rustc_ast::Attribute;
 use rustc_data_structures::fx::FxHashMap;
 use rustc_data_structures::unhash::UnhashMap;
 use rustc_hir::def::{DefKind, Res};
-use rustc_hir::def_id::{CrateNum, DefId, LocalDefId, LOCAL_CRATE};
+use rustc_hir::def_id::{CrateNum, DefId, LocalDefId, LocalModDefId, LOCAL_CRATE};
 use rustc_hir::hir_id::{HirIdMap, HirIdSet};
 use rustc_hir::intravisit::{walk_expr, FnKind, Visitor};
 use rustc_hir::LangItem::{OptionNone, OptionSome, ResultErr, ResultOk};
 use rustc_hir::{
     self as hir, def, Arm, ArrayLen, BindingAnnotation, Block, BlockCheckMode, Body, Closure, Destination, Expr,
-    ExprKind, FnDecl, HirId, Impl, ImplItem, ImplItemKind, ImplItemRef, IsAsync, Item, ItemKind, LangItem, Local,
-    MatchSource, Mutability, Node, OwnerId, Param, Pat, PatKind, Path, PathSegment, PrimTy, QPath, Stmt, StmtKind,
-    TraitItem, TraitItemRef, TraitRef, TyKind, UnOp,
+    ExprField, ExprKind, FnDecl, FnRetTy, GenericArgs, HirId, Impl, ImplItem, ImplItemKind, ImplItemRef, IsAsync, Item,
+    ItemKind, LangItem, Local, MatchSource, Mutability, Node, OwnerId, Param, Pat, PatKind, Path, PathSegment, PrimTy,
+    QPath, Stmt, StmtKind, TraitItem, TraitItemKind, TraitItemRef, TraitRef, TyKind, UnOp,
 };
 use rustc_lexer::{tokenize, TokenKind};
 use rustc_lint::{LateContext, Level, Lint, LintContext};
 use rustc_middle::hir::place::PlaceBase;
 use rustc_middle::mir::ConstantKind;
-use rustc_middle::ty as rustc_ty;
 use rustc_middle::ty::adjustment::{Adjust, Adjustment, AutoBorrow};
 use rustc_middle::ty::binding::BindingMode;
-use rustc_middle::ty::fast_reject::SimplifiedType::{
-    ArraySimplifiedType, BoolSimplifiedType, CharSimplifiedType, FloatSimplifiedType, IntSimplifiedType,
-    PtrSimplifiedType, SliceSimplifiedType, StrSimplifiedType, UintSimplifiedType,
-};
+use rustc_middle::ty::fast_reject::SimplifiedType;
 use rustc_middle::ty::layout::IntegerExt;
 use rustc_middle::ty::{
-    BorrowKind, ClosureKind, FloatTy, IntTy, Ty, TyCtxt, TypeAndMut, TypeVisitableExt, UintTy, UpvarCapture,
+    self as rustc_ty, Binder, BorrowKind, ClosureKind, FloatTy, IntTy, ParamEnv, ParamEnvAnd, Ty, TyCtxt, TypeAndMut,
+    TypeVisitableExt, UintTy, UpvarCapture,
 };
 use rustc_span::hygiene::{ExpnKind, MacroKind};
 use rustc_span::source_map::SourceMap;
 use rustc_span::symbol::{kw, Ident, Symbol};
 use rustc_span::{sym, Span};
 use rustc_target::abi::Integer;
+use visitors::Visitable;
 
 use crate::consts::{constant, miri_to_const, Constant};
 use crate::higher::Range;
-use crate::ty::{can_partially_move_ty, expr_sig, is_copy, is_recursively_primitive_type, ty_is_fn_once_param};
+use crate::ty::{
+    adt_and_variant_of_res, can_partially_move_ty, expr_sig, is_copy, is_recursively_primitive_type,
+    ty_is_fn_once_param,
+};
 use crate::visitors::for_each_expr;
 
 use rustc_middle::hir::nested_filter;
@@ -286,7 +288,7 @@ pub fn is_wild(pat: &Pat<'_>) -> bool {
 /// Checks if the given `QPath` belongs to a type alias.
 pub fn is_ty_alias(qpath: &QPath<'_>) -> bool {
     match *qpath {
-        QPath::Resolved(_, path) => matches!(path.res, Res::Def(DefKind::TyAlias | DefKind::AssocTy, ..)),
+        QPath::Resolved(_, path) => matches!(path.res, Res::Def(DefKind::TyAlias { .. } | DefKind::AssocTy, ..)),
         QPath::TypeRelative(ty, _) if let TyKind::Path(qpath) = ty.kind => { is_ty_alias(&qpath) },
         _ => false,
     }
@@ -303,7 +305,7 @@ pub fn match_trait_method(cx: &LateContext<'_>, expr: &Expr<'_>, path: &[&str]) 
 /// Checks if a method is defined in an impl of a diagnostic item
 pub fn is_diag_item_method(cx: &LateContext<'_>, def_id: DefId, diag_item: Symbol) -> bool {
     if let Some(impl_did) = cx.tcx.impl_of_method(def_id) {
-        if let Some(adt) = cx.tcx.type_of(impl_did).subst_identity().ty_adt_def() {
+        if let Some(adt) = cx.tcx.type_of(impl_did).instantiate_identity().ty_adt_def() {
             return cx.tcx.is_diagnostic_item(diag_item, adt.did());
         }
     }
@@ -512,30 +514,30 @@ pub fn path_def_id<'tcx>(cx: &LateContext<'_>, maybe_path: &impl MaybePath<'tcx>
 
 fn find_primitive_impls<'tcx>(tcx: TyCtxt<'tcx>, name: &str) -> impl Iterator<Item = DefId> + 'tcx {
     let ty = match name {
-        "bool" => BoolSimplifiedType,
-        "char" => CharSimplifiedType,
-        "str" => StrSimplifiedType,
-        "array" => ArraySimplifiedType,
-        "slice" => SliceSimplifiedType,
+        "bool" => SimplifiedType::Bool,
+        "char" => SimplifiedType::Char,
+        "str" => SimplifiedType::Str,
+        "array" => SimplifiedType::Array,
+        "slice" => SimplifiedType::Slice,
         // FIXME: rustdoc documents these two using just `pointer`.
         //
         // Maybe this is something we should do here too.
-        "const_ptr" => PtrSimplifiedType(Mutability::Not),
-        "mut_ptr" => PtrSimplifiedType(Mutability::Mut),
-        "isize" => IntSimplifiedType(IntTy::Isize),
-        "i8" => IntSimplifiedType(IntTy::I8),
-        "i16" => IntSimplifiedType(IntTy::I16),
-        "i32" => IntSimplifiedType(IntTy::I32),
-        "i64" => IntSimplifiedType(IntTy::I64),
-        "i128" => IntSimplifiedType(IntTy::I128),
-        "usize" => UintSimplifiedType(UintTy::Usize),
-        "u8" => UintSimplifiedType(UintTy::U8),
-        "u16" => UintSimplifiedType(UintTy::U16),
-        "u32" => UintSimplifiedType(UintTy::U32),
-        "u64" => UintSimplifiedType(UintTy::U64),
-        "u128" => UintSimplifiedType(UintTy::U128),
-        "f32" => FloatSimplifiedType(FloatTy::F32),
-        "f64" => FloatSimplifiedType(FloatTy::F64),
+        "const_ptr" => SimplifiedType::Ptr(Mutability::Not),
+        "mut_ptr" => SimplifiedType::Ptr(Mutability::Mut),
+        "isize" => SimplifiedType::Int(IntTy::Isize),
+        "i8" => SimplifiedType::Int(IntTy::I8),
+        "i16" => SimplifiedType::Int(IntTy::I16),
+        "i32" => SimplifiedType::Int(IntTy::I32),
+        "i64" => SimplifiedType::Int(IntTy::I64),
+        "i128" => SimplifiedType::Int(IntTy::I128),
+        "usize" => SimplifiedType::Uint(UintTy::Usize),
+        "u8" => SimplifiedType::Uint(UintTy::U8),
+        "u16" => SimplifiedType::Uint(UintTy::U16),
+        "u32" => SimplifiedType::Uint(UintTy::U32),
+        "u64" => SimplifiedType::Uint(UintTy::U64),
+        "u128" => SimplifiedType::Uint(UintTy::U128),
+        "f32" => SimplifiedType::Float(FloatTy::F32),
+        "f64" => SimplifiedType::Float(FloatTy::F64),
         _ => return [].iter().copied(),
     };
 
@@ -735,7 +737,7 @@ fn projection_stack<'a, 'hir>(mut e: &'a Expr<'hir>) -> (Vec<&'a Expr<'hir>>, &'
     let mut result = vec![];
     let root = loop {
         match e.kind {
-            ExprKind::Index(ep, _) | ExprKind::Field(ep, _) => {
+            ExprKind::Index(ep, _, _) | ExprKind::Field(ep, _) => {
                 result.push(e);
                 e = ep;
             },
@@ -782,7 +784,7 @@ pub fn can_mut_borrow_both(cx: &LateContext<'_>, e1: &Expr<'_>, e2: &Expr<'_>) -
                     return true;
                 }
             },
-            (ExprKind::Index(_, i1), ExprKind::Index(_, i2)) => {
+            (ExprKind::Index(_, i1, _), ExprKind::Index(_, i2, _)) => {
                 if !eq_expr_value(cx, i1, i2) {
                     return false;
                 }
@@ -810,7 +812,7 @@ fn is_default_equivalent_ctor(cx: &LateContext<'_>, def_id: DefId, path: &QPath<
     if let QPath::TypeRelative(_, method) = path {
         if method.ident.name == sym::new {
             if let Some(impl_did) = cx.tcx.impl_of_method(def_id) {
-                if let Some(adt) = cx.tcx.type_of(impl_did).subst_identity().ty_adt_def() {
+                if let Some(adt) = cx.tcx.type_of(impl_did).instantiate_identity().ty_adt_def() {
                     return std_types_symbols.iter().any(|&symbol| {
                         cx.tcx.is_diagnostic_item(symbol, adt.did()) || Some(adt.did()) == cx.tcx.lang_items().string()
                     });
@@ -1286,7 +1288,7 @@ pub fn contains_name<'tcx>(name: Symbol, expr: &'tcx Expr<'_>, cx: &LateContext<
 }
 
 /// Returns `true` if `expr` contains a return expression
-pub fn contains_return(expr: &hir::Expr<'_>) -> bool {
+pub fn contains_return<'tcx>(expr: impl Visitable<'tcx>) -> bool {
     for_each_expr(expr, |e| {
         if matches!(e.kind, hir::ExprKind::Ret(..)) {
             ControlFlow::Break(())
@@ -1375,7 +1377,7 @@ pub fn get_enclosing_loop_or_multi_call_closure<'tcx>(
                                     .chain(args.iter())
                                     .position(|arg| arg.hir_id == id)?;
                                 let id = cx.typeck_results().type_dependent_def_id(e.hir_id)?;
-                                let ty = cx.tcx.fn_sig(id).subst_identity().skip_binder().inputs()[i];
+                                let ty = cx.tcx.fn_sig(id).instantiate_identity().skip_binder().inputs()[i];
                                 ty_is_fn_once_param(cx.tcx, ty, cx.tcx.param_env(id).caller_bounds()).then_some(())
                             },
                             _ => None,
@@ -1637,13 +1639,13 @@ pub fn is_direct_expn_of(span: Span, name: &str) -> Option<Span> {
 
 /// Convenience function to get the return type of a function.
 pub fn return_ty<'tcx>(cx: &LateContext<'tcx>, fn_def_id: hir::OwnerId) -> Ty<'tcx> {
-    let ret_ty = cx.tcx.fn_sig(fn_def_id).subst_identity().output();
+    let ret_ty = cx.tcx.fn_sig(fn_def_id).instantiate_identity().output();
     cx.tcx.erase_late_bound_regions(ret_ty)
 }
 
 /// Convenience function to get the nth argument type of a function.
 pub fn nth_arg<'tcx>(cx: &LateContext<'tcx>, fn_def_id: hir::OwnerId, nth: usize) -> Ty<'tcx> {
-    let arg = cx.tcx.fn_sig(fn_def_id).subst_identity().input(nth);
+    let arg = cx.tcx.fn_sig(fn_def_id).instantiate_identity().input(nth);
     cx.tcx.erase_late_bound_regions(arg)
 }
 
@@ -1765,7 +1767,7 @@ pub fn is_try<'tcx>(cx: &LateContext<'_>, expr: &'tcx Expr<'tcx>) -> Option<&'tc
 
     if let ExprKind::Match(_, arms, ref source) = expr.kind {
         // desugared from a `?` operator
-        if *source == MatchSource::TryDesugar {
+        if let MatchSource::TryDesugar(_) = *source {
             return Some(expr);
         }
 
@@ -2370,11 +2372,11 @@ pub fn is_hir_ty_cfg_dependant(cx: &LateContext<'_>, ty: &hir::Ty<'_>) -> bool {
     false
 }
 
-static TEST_ITEM_NAMES_CACHE: OnceLock<Mutex<FxHashMap<LocalDefId, Vec<Symbol>>>> = OnceLock::new();
+static TEST_ITEM_NAMES_CACHE: OnceLock<Mutex<FxHashMap<LocalModDefId, Vec<Symbol>>>> = OnceLock::new();
 
-fn with_test_item_names(tcx: TyCtxt<'_>, module: LocalDefId, f: impl Fn(&[Symbol]) -> bool) -> bool {
+fn with_test_item_names(tcx: TyCtxt<'_>, module: LocalModDefId, f: impl Fn(&[Symbol]) -> bool) -> bool {
     let cache = TEST_ITEM_NAMES_CACHE.get_or_init(|| Mutex::new(FxHashMap::default()));
-    let mut map: MutexGuard<'_, FxHashMap<LocalDefId, Vec<Symbol>>> = cache.lock().unwrap();
+    let mut map: MutexGuard<'_, FxHashMap<LocalModDefId, Vec<Symbol>>> = cache.lock().unwrap();
     let value = map.entry(module);
     match value {
         Entry::Occupied(entry) => f(entry.get()),
@@ -2383,7 +2385,7 @@ fn with_test_item_names(tcx: TyCtxt<'_>, module: LocalDefId, f: impl Fn(&[Symbol
             for id in tcx.hir().module_items(module) {
                 if matches!(tcx.def_kind(id.owner_id), DefKind::Const)
                     && let item = tcx.hir().item(id)
-                    && let ItemKind::Const(ty, _body) = item.kind {
+                    && let ItemKind::Const(ty, _generics, _body) = item.kind {
                     if let TyKind::Path(QPath::Resolved(_, path)) = ty.kind {
                         // We could also check for the type name `test::TestDescAndFn`
                         if let Res::Def(DefKind::Struct, _) = path.res {
@@ -2448,6 +2450,17 @@ pub fn is_in_cfg_test(tcx: TyCtxt<'_>, id: hir::HirId) -> bool {
         .any(is_cfg_test)
 }
 
+/// Checks if the item of any of its parents has `#[cfg(...)]` attribute applied.
+pub fn inherits_cfg(tcx: TyCtxt<'_>, def_id: LocalDefId) -> bool {
+    let hir = tcx.hir();
+
+    tcx.has_attr(def_id, sym::cfg)
+        || hir
+            .parent_iter(hir.local_def_id_to_hir_id(def_id))
+            .flat_map(|(parent_id, _)| hir.attrs(parent_id))
+            .any(|attr| attr.has_name(sym::cfg))
+}
+
 /// Checks whether item either has `test` attribute applied, or
 /// is a module with `test` in its name.
 ///
@@ -2500,6 +2513,262 @@ pub fn walk_to_expr_usage<'tcx, T>(
         }
     }
     None
+}
+
+/// A type definition as it would be viewed from within a function.
+#[derive(Clone, Copy)]
+pub enum DefinedTy<'tcx> {
+    // Used for locals and closures defined within the function.
+    Hir(&'tcx hir::Ty<'tcx>),
+    /// Used for function signatures, and constant and static values. This includes the `ParamEnv`
+    /// from the definition site.
+    Mir(ParamEnvAnd<'tcx, Binder<'tcx, Ty<'tcx>>>),
+}
+
+/// The context an expressions value is used in.
+pub struct ExprUseCtxt<'tcx> {
+    /// The parent node which consumes the value.
+    pub node: ExprUseNode<'tcx>,
+    /// Any adjustments applied to the type.
+    pub adjustments: &'tcx [Adjustment<'tcx>],
+    /// Whether or not the type must unify with another code path.
+    pub is_ty_unified: bool,
+    /// Whether or not the value will be moved before it's used.
+    pub moved_before_use: bool,
+}
+
+/// The node which consumes a value.
+pub enum ExprUseNode<'tcx> {
+    /// Assignment to, or initializer for, a local
+    Local(&'tcx Local<'tcx>),
+    /// Initializer for a const or static item.
+    ConstStatic(OwnerId),
+    /// Implicit or explicit return from a function.
+    Return(OwnerId),
+    /// Initialization of a struct field.
+    Field(&'tcx ExprField<'tcx>),
+    /// An argument to a function.
+    FnArg(&'tcx Expr<'tcx>, usize),
+    /// An argument to a method.
+    MethodArg(HirId, Option<&'tcx GenericArgs<'tcx>>, usize),
+    /// The callee of a function call.
+    Callee,
+    /// Access of a field.
+    FieldAccess(Ident),
+}
+impl<'tcx> ExprUseNode<'tcx> {
+    /// Checks if the value is returned from the function.
+    pub fn is_return(&self) -> bool {
+        matches!(self, Self::Return(_))
+    }
+
+    /// Checks if the value is used as a method call receiver.
+    pub fn is_recv(&self) -> bool {
+        matches!(self, Self::MethodArg(_, _, 0))
+    }
+
+    /// Gets the needed type as it's defined without any type inference.
+    pub fn defined_ty(&self, cx: &LateContext<'tcx>) -> Option<DefinedTy<'tcx>> {
+        match *self {
+            Self::Local(Local { ty: Some(ty), .. }) => Some(DefinedTy::Hir(ty)),
+            Self::ConstStatic(id) => Some(DefinedTy::Mir(
+                cx.param_env
+                    .and(Binder::dummy(cx.tcx.type_of(id).instantiate_identity())),
+            )),
+            Self::Return(id) => {
+                let hir_id = cx.tcx.hir().local_def_id_to_hir_id(id.def_id);
+                if let Some(Node::Expr(Expr {
+                    kind: ExprKind::Closure(c),
+                    ..
+                })) = cx.tcx.hir().find(hir_id)
+                {
+                    match c.fn_decl.output {
+                        FnRetTy::DefaultReturn(_) => None,
+                        FnRetTy::Return(ty) => Some(DefinedTy::Hir(ty)),
+                    }
+                } else {
+                    Some(DefinedTy::Mir(
+                        cx.param_env.and(cx.tcx.fn_sig(id).instantiate_identity().output()),
+                    ))
+                }
+            },
+            Self::Field(field) => match get_parent_expr_for_hir(cx, field.hir_id) {
+                Some(Expr {
+                    hir_id,
+                    kind: ExprKind::Struct(path, ..),
+                    ..
+                }) => adt_and_variant_of_res(cx, cx.qpath_res(path, *hir_id))
+                    .and_then(|(adt, variant)| {
+                        variant
+                            .fields
+                            .iter()
+                            .find(|f| f.name == field.ident.name)
+                            .map(|f| (adt, f))
+                    })
+                    .map(|(adt, field_def)| {
+                        DefinedTy::Mir(
+                            cx.tcx
+                                .param_env(adt.did())
+                                .and(Binder::dummy(cx.tcx.type_of(field_def.did).instantiate_identity())),
+                        )
+                    }),
+                _ => None,
+            },
+            Self::FnArg(callee, i) => {
+                let sig = expr_sig(cx, callee)?;
+                let (hir_ty, ty) = sig.input_with_hir(i)?;
+                Some(match hir_ty {
+                    Some(hir_ty) => DefinedTy::Hir(hir_ty),
+                    None => DefinedTy::Mir(
+                        sig.predicates_id()
+                            .map_or(ParamEnv::empty(), |id| cx.tcx.param_env(id))
+                            .and(ty),
+                    ),
+                })
+            },
+            Self::MethodArg(id, _, i) => {
+                let id = cx.typeck_results().type_dependent_def_id(id)?;
+                let sig = cx.tcx.fn_sig(id).skip_binder();
+                Some(DefinedTy::Mir(cx.tcx.param_env(id).and(sig.input(i))))
+            },
+            Self::Local(_) | Self::FieldAccess(..) | Self::Callee => None,
+        }
+    }
+}
+
+/// Gets the context an expression's value is used in.
+#[expect(clippy::too_many_lines)]
+pub fn expr_use_ctxt<'tcx>(cx: &LateContext<'tcx>, e: &'tcx Expr<'tcx>) -> Option<ExprUseCtxt<'tcx>> {
+    let mut adjustments = [].as_slice();
+    let mut is_ty_unified = false;
+    let mut moved_before_use = false;
+    let ctxt = e.span.ctxt();
+    walk_to_expr_usage(cx, e, &mut |parent, child_id| {
+        // LocalTableInContext returns the wrong lifetime, so go use `expr_adjustments` instead.
+        if adjustments.is_empty() && let Node::Expr(e) = cx.tcx.hir().get(child_id) {
+            adjustments = cx.typeck_results().expr_adjustments(e);
+        }
+        match parent {
+            Node::Local(l) if l.span.ctxt() == ctxt => Some(ExprUseCtxt {
+                node: ExprUseNode::Local(l),
+                adjustments,
+                is_ty_unified,
+                moved_before_use,
+            }),
+            Node::Item(&Item {
+                kind: ItemKind::Static(..) | ItemKind::Const(..),
+                owner_id,
+                span,
+                ..
+            })
+            | Node::TraitItem(&TraitItem {
+                kind: TraitItemKind::Const(..),
+                owner_id,
+                span,
+                ..
+            })
+            | Node::ImplItem(&ImplItem {
+                kind: ImplItemKind::Const(..),
+                owner_id,
+                span,
+                ..
+            }) if span.ctxt() == ctxt => Some(ExprUseCtxt {
+                node: ExprUseNode::ConstStatic(owner_id),
+                adjustments,
+                is_ty_unified,
+                moved_before_use,
+            }),
+
+            Node::Item(&Item {
+                kind: ItemKind::Fn(..),
+                owner_id,
+                span,
+                ..
+            })
+            | Node::TraitItem(&TraitItem {
+                kind: TraitItemKind::Fn(..),
+                owner_id,
+                span,
+                ..
+            })
+            | Node::ImplItem(&ImplItem {
+                kind: ImplItemKind::Fn(..),
+                owner_id,
+                span,
+                ..
+            }) if span.ctxt() == ctxt => Some(ExprUseCtxt {
+                node: ExprUseNode::Return(owner_id),
+                adjustments,
+                is_ty_unified,
+                moved_before_use,
+            }),
+
+            Node::ExprField(field) if field.span.ctxt() == ctxt => Some(ExprUseCtxt {
+                node: ExprUseNode::Field(field),
+                adjustments,
+                is_ty_unified,
+                moved_before_use,
+            }),
+
+            Node::Expr(parent) if parent.span.ctxt() == ctxt => match parent.kind {
+                ExprKind::Ret(_) => Some(ExprUseCtxt {
+                    node: ExprUseNode::Return(OwnerId {
+                        def_id: cx.tcx.hir().body_owner_def_id(cx.enclosing_body.unwrap()),
+                    }),
+                    adjustments,
+                    is_ty_unified,
+                    moved_before_use,
+                }),
+                ExprKind::Closure(closure) => Some(ExprUseCtxt {
+                    node: ExprUseNode::Return(OwnerId { def_id: closure.def_id }),
+                    adjustments,
+                    is_ty_unified,
+                    moved_before_use,
+                }),
+                ExprKind::Call(func, args) => Some(ExprUseCtxt {
+                    node: match args.iter().position(|arg| arg.hir_id == child_id) {
+                        Some(i) => ExprUseNode::FnArg(func, i),
+                        None => ExprUseNode::Callee,
+                    },
+                    adjustments,
+                    is_ty_unified,
+                    moved_before_use,
+                }),
+                ExprKind::MethodCall(name, _, args, _) => Some(ExprUseCtxt {
+                    node: ExprUseNode::MethodArg(
+                        parent.hir_id,
+                        name.args,
+                        args.iter().position(|arg| arg.hir_id == child_id).map_or(0, |i| i + 1),
+                    ),
+                    adjustments,
+                    is_ty_unified,
+                    moved_before_use,
+                }),
+                ExprKind::Field(child, name) if child.hir_id == e.hir_id => Some(ExprUseCtxt {
+                    node: ExprUseNode::FieldAccess(name),
+                    adjustments,
+                    is_ty_unified,
+                    moved_before_use,
+                }),
+                ExprKind::If(e, _, _) | ExprKind::Match(e, _, _) if e.hir_id != child_id => {
+                    is_ty_unified = true;
+                    moved_before_use = true;
+                    None
+                },
+                ExprKind::Block(_, Some(_)) | ExprKind::Break(..) => {
+                    is_ty_unified = true;
+                    moved_before_use = true;
+                    None
+                },
+                ExprKind::Block(..) => {
+                    moved_before_use = true;
+                    None
+                },
+                _ => None,
+            },
+            _ => None,
+        }
+    })
 }
 
 /// Tokenizes the input while keeping the text associated with each token.

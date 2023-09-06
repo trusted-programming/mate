@@ -5,6 +5,7 @@ use crate::tokenize_with_text;
 use rustc_ast::ast::InlineAsmTemplatePiece;
 use rustc_data_structures::fx::FxHasher;
 use rustc_hir::def::Res;
+use rustc_hir::MatchSource::TryDesugar;
 use rustc_hir::{
     ArrayLen, BinOpKind, BindingAnnotation, Block, BodyId, Closure, Expr, ExprField, ExprKind, FnRetTy, GenericArg,
     GenericArgs, Guard, HirId, HirIdMap, InlineAsmOperand, Let, Lifetime, LifetimeName, Pat, PatField, PatKind, Path,
@@ -252,15 +253,15 @@ impl HirEqInterExpr<'_, '_, '_> {
             return false;
         }
 
-        if let Some((typeck_lhs, typeck_rhs)) = self.inner.maybe_typeck_results {
-            if let (Some(l), Some(r)) = (
+        if let Some((typeck_lhs, typeck_rhs)) = self.inner.maybe_typeck_results
+            && typeck_lhs.expr_ty(left) == typeck_rhs.expr_ty(right)
+            && let (Some(l), Some(r)) = (
                 constant_simple(self.inner.cx, typeck_lhs, left),
                 constant_simple(self.inner.cx, typeck_rhs, right),
-            ) {
-                if l == r {
-                    return true;
-                }
-            }
+            )
+            && l == r
+        {
+            return true;
         }
 
         let is_eq = match (
@@ -299,7 +300,7 @@ impl HirEqInterExpr<'_, '_, '_> {
             (&ExprKind::Field(l_f_exp, ref l_f_ident), &ExprKind::Field(r_f_exp, ref r_f_ident)) => {
                 l_f_ident.name == r_f_ident.name && self.eq_expr(l_f_exp, r_f_exp)
             },
-            (&ExprKind::Index(la, li), &ExprKind::Index(ra, ri)) => self.eq_expr(la, ra) && self.eq_expr(li, ri),
+            (&ExprKind::Index(la, li, _), &ExprKind::Index(ra, ri, _)) => self.eq_expr(la, ra) && self.eq_expr(li, ri),
             (&ExprKind::If(lc, lt, ref le), &ExprKind::If(rc, rt, ref re)) => {
                 self.eq_expr(lc, rc) && self.eq_expr(lt, rt) && both(le, re, |l, r| self.eq_expr(l, r))
             },
@@ -311,7 +312,7 @@ impl HirEqInterExpr<'_, '_, '_> {
                 lls == rls && self.eq_block(lb, rb) && both(ll, rl, |l, r| l.ident.name == r.ident.name)
             },
             (&ExprKind::Match(le, la, ref ls), &ExprKind::Match(re, ra, ref rs)) => {
-                ls == rs
+                (ls == rs || (matches!((ls, rs), (TryDesugar(_), TryDesugar(_)))))
                     && self.eq_expr(le, re)
                     && over(la, ra, |l, r| {
                         self.eq_pat(l.pat, r.pat)
@@ -494,10 +495,13 @@ impl HirEqInterExpr<'_, '_, '_> {
             loop {
                 use TokenKind::{BlockComment, LineComment, Whitespace};
                 if left_data.macro_def_id != right_data.macro_def_id
-                    || (matches!(left_data.kind, ExpnKind::Macro(MacroKind::Bang, name) if name == sym::cfg)
-                        && !eq_span_tokens(self.inner.cx, left_data.call_site, right_data.call_site, |t| {
-                            !matches!(t, Whitespace | LineComment { .. } | BlockComment { .. })
-                        }))
+                    || (matches!(
+                        left_data.kind,
+                        ExpnKind::Macro(MacroKind::Bang, name)
+                        if name == sym::cfg || name == sym::option_env
+                    ) && !eq_span_tokens(self.inner.cx, left_data.call_site, right_data.call_site, |t| {
+                        !matches!(t, Whitespace | LineComment { .. } | BlockComment { .. })
+                    }))
                 {
                     // Either a different chain of macro calls, or different arguments to the `cfg` macro.
                     return false;
@@ -727,7 +731,7 @@ impl<'a, 'tcx> SpanlessHash<'a, 'tcx> {
                 self.hash_expr(e);
                 self.hash_name(f.name);
             },
-            ExprKind::Index(a, i) => {
+            ExprKind::Index(a, i, _) => {
                 self.hash_expr(a);
                 self.hash_expr(i);
             },

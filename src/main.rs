@@ -1,9 +1,19 @@
 #![feature(rustc_private)]
 
+// We need to import them like this otherwise it doesn't work.
+extern crate rustc_ast;
+extern crate rustc_errors;
+extern crate rustc_hir;
+extern crate rustc_lint;
+extern crate rustc_middle;
+extern crate rustc_session;
+extern crate rustc_span;
 mod lints;
 
-use lints::rules::MissingDebugImplementations;
-use rustc_tools::rustc_lint::LintStore;
+use lints::rules::default_numeric_fallback::DefaultNumericFallback;
+use lints::rules::missing_debug_implementations::MissingDebugImplementations;
+
+use rustc_lint::LintStore;
 use rustc_tools::with_lints;
 
 fn main() {
@@ -14,8 +24,8 @@ fn main() {
     }
     println!("Running lint example with arguments `{:?}`", args);
     with_lints(&args, vec![], |store: &mut LintStore| {
-        // store.register_early_pass(|| Box::new(WarnGenerics));
-        store.register_late_pass(|_| Box::new(missing_debug_implementations));
+        store.register_late_pass(|_| Box::new(DefaultNumericFallback));
+        store.register_late_pass(|_| Box::new(MissingDebugImplementations));
     })
     .unwrap();
 }

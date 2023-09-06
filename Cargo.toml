@@ -5,7 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+rustc-workspace-hack = "1.0.0"
+
 [dependencies]
-rustc-tools = "0.1.2"
-if_chain = "1.0"
-# clippy_utils = { path = "clippy_utils" }
+if_chain = "1.0.2"
+rustc-tools = "0.2.0"
+clippy_utils = { path = "clippy_utils" }

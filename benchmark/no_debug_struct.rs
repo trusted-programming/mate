@@ -1,11 +1,6 @@
-#![allow(unused)]
-
-struct NoDebug {}
+pub struct NoDebug {}
 
 #[derive(Debug)]
-struct YesDebug {}
+pub struct YesDebug {}
 
-fn main() {
-    let yes_debug = YesDebug {};
-    let no_debug = NoDebug {};
-}
+fn main() {}

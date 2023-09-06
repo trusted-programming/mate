@@ -1,7 +1,7 @@
-use rustc_tools::rustc_hir as hir;
-use rustc_tools::rustc_lint::{LateContext, LateLintPass, Level, LintContext};
-use rustc_tools::rustc_session::{declare_lint_pass, declare_tool_lint};
-use rustc_tools::rustc_span::symbol::sym;
+use rustc_hir as hir;
+use rustc_lint::{LateContext, LateLintPass, Level, LintContext};
+use rustc_session::{declare_lint_pass, declare_tool_lint};
+use rustc_span::symbol::sym;
 
 declare_tool_lint! {
 /// The `missing_debug_implementations` lint detects missing
@@ -53,7 +53,9 @@ impl LateLintPass<'_> for MissingDebugImplementations {
             return;
         }
 
-        let Some(debug) = cx.tcx.get_diagnostic_item(sym::Debug) else { return };
+        let Some(debug) = cx.tcx.get_diagnostic_item(sym::Debug) else {
+            return;
+        };
 
         let has_impl = cx
             .tcx
