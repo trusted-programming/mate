@@ -38,3 +38,6 @@ there are 2 sections rules and parallel, the goal of parallel is to lints all th
 32. clippy::redundant_allocation
 
 ## Parallel list
+
+
+## Unsafe to Safe list
