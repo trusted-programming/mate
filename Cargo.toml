@@ -5,7 +5,6 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-rustc-workspace-hack = "1.0.0"
 
 [dependencies]
 if_chain = "1.0.2"
