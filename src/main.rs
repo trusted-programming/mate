@@ -25,10 +25,28 @@ fn main() {
         return;
     }
     println!("Running lint example with arguments `{:?}`", args);
-    with_lints(&args, vec![], |store: &mut LintStore| {
-        store.register_late_pass(|_| Box::new(DefaultNumericFallback));
-        store.register_late_pass(|_| Box::new(MissingDebugImplementations));
-        store.register_late_pass(|_| Box::new(IterLint));
-    })
-    .unwrap();
+
+    // @todo take this variable from command line input
+    let categories = vec![Category::Parallel];
+
+    for category in categories {
+        match category {
+            Category::Parallel => with_lints(&args, vec![], |store: &mut LintStore| {
+                store.register_late_pass(|_| Box::new(IterLint));
+            })
+            .unwrap(),
+            Category::Rules => with_lints(&args, vec![], |store: &mut LintStore| {
+                store.register_late_pass(|_| Box::new(DefaultNumericFallback));
+                store.register_late_pass(|_| Box::new(MissingDebugImplementations));
+            })
+            .unwrap(),
+            Category::Safety => with_lints(&args, vec![], |store: &mut LintStore| {}).unwrap(),
+        }
+    }
+}
+
+enum Category {
+    Parallel,
+    Rules,
+    Safety,
 }
