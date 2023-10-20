@@ -3,6 +3,13 @@
 there are 2 sections rules and parallel, the goal of parallel is to lints all the places where there is a possibility to parallelize the code. the goal of rules is to make all the rules machine applicable.
 
 
+### benchmarks
+-  https://github.com/alexcrichton/tar-rs
+-  https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime
+-  https://gitee.com/organizations/openharmony/projects?lang=Rust
+
+
+
 ## Rules list
 1. non_snake_case
 2. non_upper_case_globals
