@@ -11,7 +11,7 @@ extern crate rustc_session;
 extern crate rustc_span;
 mod lints;
 
-use lints::parallel::iter::IterLint;
+use lints::parallel::{phase1, phase2, phase3, phase4, iter};
 use lints::rules::default_numeric_fallback::DefaultNumericFallback;
 use lints::rules::missing_debug_implementations::MissingDebugImplementations;
 
@@ -32,7 +32,11 @@ fn main() {
     for category in categories {
         match category {
             Category::Parallel => with_lints(&args, vec![], |store: &mut LintStore| {
-                store.register_late_pass(|_| Box::new(IterLint));
+                //store.register_late_pass(|_| Box::new(iter::IterLint));
+                store.register_late_pass(|_| Box::new(phase2::simple::FilterSimple));
+                store.register_late_pass(|_| Box::new(phase3::fold::simple::FoldSimple));
+                store.register_late_pass(|_| Box::new(phase4::fold::simple::ParFoldSimple));
+                store.register_early_pass(|| Box::new(phase1::ForEach));
             })
             .unwrap(),
             Category::Rules => with_lints(&args, vec![], |store: &mut LintStore| {
@@ -40,7 +44,7 @@ fn main() {
                 store.register_late_pass(|_| Box::new(MissingDebugImplementations));
             })
             .unwrap(),
-            Category::Safety => with_lints(&args, vec![], |store: &mut LintStore| {}).unwrap(),
+            Category::Safety => with_lints(&args, vec![], |_store: &mut LintStore| {}).unwrap(),
         }
     }
 }
