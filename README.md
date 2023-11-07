@@ -1,14 +1,14 @@
 # cargo-mate
 
-there are 2 sections rules and parallel, the goal of parallel is to lints all the places where there is a possibility to parallelize the code. the goal of rules is to make all the rules machine applicable.
-
+There are 3 sections -- `rules`, `safety`, and `parallel`: 
+- the goal of `rules` is to make all the rules *machine applicable*;
+- the goal of `safety` is to detect opportunities to convert `unsafe` code into safe ones;
+- the goal of `parallel` is to lint all the places where there is a possibility to parallelize the code. 
 
 ### benchmarks
 -  https://github.com/alexcrichton/tar-rs
 -  https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime
 -  https://gitee.com/organizations/openharmony/projects?lang=Rust
-
-
 
 ## Rules list
 1. non_snake_case
@@ -44,7 +44,7 @@ there are 2 sections rules and parallel, the goal of parallel is to lints all th
 31. clippy::mutex_integer 
 32. clippy::redundant_allocation
 
+## Unsafe to Safe list
+
 ## Parallel list
 
-
-## Unsafe to Safe list
