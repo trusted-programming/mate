@@ -11,3 +11,4 @@ if_chain = "1.0.2"
 rustc-tools = "0.2.0"
 clippy_utils = { path = "clippy_utils" }
 clap = { version = "4.4.8", features = ["derive", "cargo"] }
+toml = "0.8.8"

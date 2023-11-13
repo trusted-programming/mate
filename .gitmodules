@@ -1,0 +1,3 @@
+[submodule "benchmark/parallel/tar-rs"]
+	path = benchmark/parallel/tar-rs
+	url = git@github.com:alexcrichton/tar-rs.git

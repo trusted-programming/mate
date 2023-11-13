@@ -1,19 +1,18 @@
-use clap::Parser;
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Parser)] // requires `derive` feature
+#[derive(Debug, clap::Parser)]
 #[command(name = "cargo")]
 #[command(bin_name = "cargo")]
-pub enum CargoCli {
+pub enum Cli {
     Mate(MateArgs),
 }
 
-#[derive(clap::Args)]
+#[derive(Debug, clap::Args)]
 #[command(author, version, about, long_about = None)]
 pub struct MateArgs {
-    #[arg(long)]
-    pub manifest_path: Option<std::path::PathBuf>,
+    #[arg(long, short)]
+    pub entrypoints_path: Option<Vec<String>>,
     #[clap(long, default_values_t = vec![Category::Parallel], ignore_case = true)]
     pub category: Vec<Category>,
 }
