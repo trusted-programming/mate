@@ -1,4 +1,3 @@
-use clippy_utils::sym;
 use rustc_hir::{Expr, ExprKind, HirId};
 use rustc_span::{Span, Symbol};
 
