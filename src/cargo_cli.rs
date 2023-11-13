@@ -17,8 +17,9 @@ pub struct MateArgs {
     pub category: Vec<Category>,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Default, Debug, PartialEq, Copy, Clone)]
 pub enum Category {
+    #[default]
     Parallel,
     Rules,
     Safety,
@@ -34,12 +35,6 @@ impl FromStr for Category {
             "safety" => Ok(Category::Safety),
             _ => Err("no match"),
         }
-    }
-}
-
-impl Default for Category {
-    fn default() -> Self {
-        Category::Parallel
     }
 }
 
