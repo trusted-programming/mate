@@ -11,7 +11,7 @@ extern crate rustc_session;
 extern crate rustc_span;
 mod lints;
 
-use lints::parallel::{phase1, phase2, phase3, phase4, iter};
+use lints::parallel::{iter, phase1, phase2, phase3, phase4};
 use lints::rules::default_numeric_fallback::DefaultNumericFallback;
 use lints::rules::missing_debug_implementations::MissingDebugImplementations;
 

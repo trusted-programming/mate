@@ -54,5 +54,3 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldSimple {
         }
     }
 }
-
-

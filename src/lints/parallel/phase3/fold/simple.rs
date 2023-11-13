@@ -106,4 +106,4 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
             }
         }
     }
-}   
+}

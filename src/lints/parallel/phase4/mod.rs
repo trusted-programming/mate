@@ -13,7 +13,10 @@ struct IterRenaming {
 
 impl IterRenaming {
     fn new() -> Self {
-        IterRenaming { suggestions: vec![], seen: vec![] }
+        IterRenaming {
+            suggestions: vec![],
+            seen: vec![],
+        }
     }
 
     fn traverse_iter_chain(&mut self, expr: &Expr) {
@@ -24,14 +27,12 @@ impl IterRenaming {
 
         if let ExprKind::MethodCall(path, recv, args, _span) = &expr.kind {
             // TODO: Optimize this.
-            let seq_names =
-                vec![Symbol::intern("iter"),
-                     Symbol::intern("iter_mut"),
-                     Symbol::intern("into_iter")];
-            let par_names =
-                vec!["par_iter",
-                     "par_iter_mut",
-                     "into_par_iter"];
+            let seq_names = vec![
+                Symbol::intern("iter"),
+                Symbol::intern("iter_mut"),
+                Symbol::intern("into_iter"),
+            ];
+            let par_names = vec!["par_iter", "par_iter_mut", "into_par_iter"];
             for (sm, pm) in seq_names.into_iter().zip(par_names.into_iter()) {
                 if path.ident.name == sm {
                     self.suggestions.push((path.ident.span, pm.to_string()));
