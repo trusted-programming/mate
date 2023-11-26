@@ -3,6 +3,9 @@ name = "cargo-mate"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.rust-analyzer]
+rustc_private = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
@@ -12,3 +15,5 @@ rustc-tools = "0.2.0"
 clippy_utils = { path = "clippy_utils" }
 clap = { version = "4.4.8", features = ["derive", "cargo"] }
 toml = "0.8.8"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"

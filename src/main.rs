@@ -6,6 +6,7 @@ extern crate rustc_ast;
 extern crate rustc_errors;
 extern crate rustc_hir;
 extern crate rustc_lint;
+extern crate rustc_lint_defs;
 extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
@@ -18,6 +19,8 @@ use clap::Parser;
 use lints::parallel::{phase1, phase2, phase3, phase4};
 use lints::rules::default_numeric_fallback::DefaultNumericFallback;
 use lints::rules::missing_debug_implementations::MissingDebugImplementations;
+use lints::safety::permission::RawPointerPermission;
+use lints::safety::translation::RawPointerTranslation;
 use rustc_lint::LintStore;
 use rustc_tools::with_lints;
 use std::fs;
@@ -48,7 +51,14 @@ fn main() {
                 store.register_late_pass(|_| Box::new(DefaultNumericFallback));
                 store.register_late_pass(|_| Box::new(MissingDebugImplementations));
             }),
-            Category::Safety => with_lints(&entrypoints_path, vec![], |_store: &mut LintStore| {}),
+            Category::Safety => with_lints(&entrypoints_path, vec![], |store: &mut LintStore| {
+                store.register_late_pass(|_| {
+                    Box::new(RawPointerPermission::new("analysis_results"))
+                });
+                store.register_late_pass(|_| {
+                    Box::new(RawPointerTranslation::new("analysis_results"))
+                });
+            }),
         };
     }
 }
