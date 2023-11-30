@@ -13,6 +13,12 @@ extern crate rustc_span;
 mod cargo_cli;
 mod lints;
 
+use anyhow::Result;
+use cargo::core::Workspace;
+use cargo::ops::{self, CompileOptions};
+use cargo::util::command_prelude::CompileMode;
+use cargo::util::important_paths::find_root_manifest_for_wd;
+use cargo::util::Config;
 use cargo_cli::{Category, Cli};
 use clap::Parser;
 use lints::parallel::{phase1, phase2, phase3, phase4};
@@ -20,76 +26,68 @@ use lints::rules::default_numeric_fallback::DefaultNumericFallback;
 use lints::rules::missing_debug_implementations::MissingDebugImplementations;
 use rustc_lint::LintStore;
 use rustc_tools::with_lints;
-use std::fs;
-use std::path::PathBuf;
-use toml::{self, Table};
+use std::env;
 
-fn main() {
+fn main() -> Result<()> {
     let Cli::Mate(args) = Cli::parse();
 
-    let category = args.category;
-    let mut entrypoints_path = args.entrypoints_path.unwrap_or_else(|| {
-        find_entrypoints().unwrap_or_else(|| {
-            println!("no valid entrypoint found!");
-            std::process::exit(1);
-        })
-    });
-    entrypoints_path.insert(0, String::new());
+    let config = Config::default()?;
+    let manifest_path = find_root_manifest_for_wd(config.cwd())?;
+    let workspace = Workspace::new(&manifest_path, &config)?;
+    let compile_opts = CompileOptions::new(&config, CompileMode::Check { test: false })?;
+    ops::compile(&workspace, &compile_opts)?;
 
-    for category in category {
-        let _ignore_errors = match category {
-            Category::Parallel => with_lints(&entrypoints_path, vec![], |store: &mut LintStore| {
-                store.register_late_pass(|_| Box::new(phase2::simple::FilterSimple));
-                store.register_late_pass(|_| Box::new(phase3::fold::simple::FoldSimple));
-                store.register_late_pass(|_| Box::new(phase4::fold::simple::ParFoldSimple));
-                store.register_early_pass(|| Box::new(phase1::ForEach));
-            }),
-            Category::Rules => with_lints(&entrypoints_path, vec![], |store: &mut LintStore| {
-                store.register_late_pass(|_| Box::new(DefaultNumericFallback));
-                store.register_late_pass(|_| Box::new(MissingDebugImplementations));
-            }),
-            Category::Safety => with_lints(&entrypoints_path, vec![], |_store: &mut LintStore| {}),
-        };
-    }
-}
-
-// Function to add paths from a toml array to entrypoints
-fn add_paths_from_array(array: &[toml::Value], entrypoints: &mut Vec<String>) {
-    for item in array.iter().filter_map(|val| val.as_table()) {
-        if let Some(path) = item.get("path").and_then(|val| val.as_str()) {
-            entrypoints.push(path.to_string());
-        }
-    }
-}
-
-fn find_entrypoints() -> Option<Vec<String>> {
-    let mut entrypoints = Vec::new();
-    let content = fs::read_to_string("Cargo.toml").expect("Failed to read Cargo.toml");
-    let cargo_toml: Table = content.parse().expect("Failed to parse Cargo.toml");
-
-    // Function to add paths from a toml array to entrypoints defined elsewhere...
-    // Assuming add_paths_from_array is defined elsewhere and correctly adds paths
-
-    // Add library paths
-    if let Some(toml::Value::Array(libs)) = cargo_toml.get("lib") {
-        add_paths_from_array(libs, &mut entrypoints);
-    }
-
-    // Add binary paths
-    if let Some(toml::Value::Array(bins)) = cargo_toml.get("bin") {
-        add_paths_from_array(bins, &mut entrypoints);
-    }
-
-    // Add default library and binary paths if they exist
-    for default_path in &["src/lib.rs", "src/main.rs"] {
-        let path = PathBuf::from(*default_path);
-        if path.exists() {
-            entrypoints.push(path.to_string_lossy().into_owned());
-        }
-    }
-    if entrypoints.is_empty() {
-        None
+    // Determine the build profile
+    let profile = if let Ok(profile) = env::var("PROFILE") {
+        profile
     } else {
-        Some(entrypoints)
+        // Default to debug if PROFILE environment variable is not set
+        "debug".to_string()
+    };
+    let deps_directory = workspace.target_dir().join(&profile).join("deps");
+
+    let rustc_dependency_dir = format!("-L {}", deps_directory.display());
+
+    let package = workspace.current()?;
+    let targets = package.targets();
+
+    let category = args.category;
+
+    for target in targets {
+        let mut rustc_args = Vec::new();
+        rustc_args.push(String::new());
+        let src_path = target.src_path().path().map_or(String::new(), |path| {
+            path.to_str().unwrap_or_default().to_string()
+        });
+
+        rustc_args.push(src_path);
+        rustc_args.push(rustc_dependency_dir.clone());
+
+        if target.is_bin() || target.is_lib() {
+            for category in &category {
+                let _ignore_errors = match category {
+                    Category::Parallel => {
+                        with_lints(&rustc_args, vec![], |store: &mut LintStore| {
+                            store.register_late_pass(|_| Box::new(phase2::simple::FilterSimple));
+                            store
+                                .register_late_pass(|_| Box::new(phase3::fold::simple::FoldSimple));
+                            store.register_late_pass(|_| {
+                                Box::new(phase4::fold::simple::ParFoldSimple)
+                            });
+                            store.register_early_pass(|| Box::new(phase1::ForEach));
+                        })
+                    }
+                    Category::Rules => with_lints(&rustc_args, vec![], |store: &mut LintStore| {
+                        store.register_late_pass(|_| Box::new(DefaultNumericFallback));
+                        store.register_late_pass(|_| Box::new(MissingDebugImplementations));
+                    }),
+                    Category::Safety => {
+                        with_lints(&rustc_args, vec![], |_store: &mut LintStore| {})
+                    }
+                };
+            }
+        }
     }
+
+    Ok(())
 }
