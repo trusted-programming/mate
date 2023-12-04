@@ -26,7 +26,8 @@ use lints::rules::default_numeric_fallback::DefaultNumericFallback;
 use lints::rules::missing_debug_implementations::MissingDebugImplementations;
 use rustc_lint::LintStore;
 use rustc_tools::with_lints;
-use std::env;
+use std::fs;
+use std::path::PathBuf;
 
 fn main() -> Result<()> {
     let Cli::Mate(args) = Cli::parse();
@@ -37,31 +38,40 @@ fn main() -> Result<()> {
     let compile_opts = CompileOptions::new(&config, CompileMode::Check { test: false })?;
     ops::compile(&workspace, &compile_opts)?;
 
-    // Determine the build profile
-    let profile = if let Ok(profile) = env::var("PROFILE") {
-        profile
-    } else {
-        // Default to debug if PROFILE environment variable is not set
-        "debug".to_string()
-    };
-    let deps_directory = workspace.target_dir().join(&profile).join("deps");
-
-    let rustc_dependency_dir = format!("-L {}", deps_directory.display());
-
     let package = workspace.current()?;
     let targets = package.targets();
+
+    let target_directory = PathBuf::from("target");
+    let build_mode = "debug"; // Change to "release" if needed
+    let deps_directory = target_directory.join(build_mode).join("deps");
 
     let category = args.category;
 
     for target in targets {
         let mut rustc_args = Vec::new();
-        rustc_args.push(String::new());
         let src_path = target.src_path().path().map_or(String::new(), |path| {
             path.to_str().unwrap_or_default().to_string()
         });
 
+        rustc_args.push(String::new());
         rustc_args.push(src_path);
-        rustc_args.push(rustc_dependency_dir.clone());
+
+        // List all files in the deps directory
+        for entry in fs::read_dir(&deps_directory)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            // Check if the file is an rlib
+            if let Some(extension) = path.extension() {
+                if extension == "rlib" {
+                    let path_string = path.to_string_lossy().into_owned();
+
+                    rustc_args.push("--extern".to_string());
+                    rustc_args.push(path_string);
+                }
+            }
+        }
+        dbg!(&rustc_args);
 
         if target.is_bin() || target.is_lib() {
             for category in &category {
