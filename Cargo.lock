@@ -310,6 +310,7 @@ dependencies = [
  "clap",
  "clippy_utils",
  "if_chain",
+ "lazy_static",
  "rustc-tools",
  "rustfix",
 ]
