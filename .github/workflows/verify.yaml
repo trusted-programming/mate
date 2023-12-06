@@ -10,16 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     name: stable / fmt
     steps:
-
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Install nightly-2023-08-24
+      - name: Install nightly-2023-10-06
         uses: dtolnay/rust-toolchain@master
         with:
-            toolchain: nightly-2023-08-24
-            components: rustfmt
+          toolchain: nightly-2023-10-06
+          components: rustfmt
 
       - name: cargo fmt --check
         run: cargo fmt --check
@@ -33,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [nightly-2023-08-24]
+        toolchain: [nightly-2023-10-06]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +42,6 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
-          
+
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features

@@ -21,3 +21,8 @@ dylint_testing = "2.5.0"
 
 [package.metadata.rust-analyzer]
 rustc_private = true
+
+[workspace.metadata.dylint]
+libraries = [
+    { git = "https://github.com/trusted-programming/cargo-mate/tree/dylint_approach" },
+]
