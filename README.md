@@ -5,6 +5,10 @@
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
 
+prerequisites:
+    - rustup
+    - latest version of rust stable if not run `rustup update`
+
 1. Install `cargo-dylint` and `dylint-link`:
 
    ```sh
@@ -25,9 +29,9 @@ The next three steps install Dylint and run all of this repository's lints on a 
     # lint only
     cargo dylint --all --workspace
     # lint and fix, if code breaks(not compiling) it will revert to original
-    cargo dylint --all --workspace --fix
+    cargo dylint --all --workspace --fix -- --allow-dirty
     # lint and fix ignoring errors if there are any
-    cargo dylint --all --workspace --fix -- --broken-code
+    cargo dylint --all --workspace --fix -- --allow-dirty --broken-code
     ```
 
 In the above example, the libraries are found via [workspace metadata], which is the recommended way. For additional ways of finding libraries, see [How Dylint works].
