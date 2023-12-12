@@ -52,6 +52,7 @@ jobs:
 
       - name: lint fix
         run: |
+          cd commonlibrary_rust_ylong_runtime
           count=0
 
           while [ $count -lt 4 ]; do
