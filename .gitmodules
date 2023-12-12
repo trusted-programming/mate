@@ -1,6 +1,0 @@
-[submodule "benchmark/parallel/tar-rs"]
-	path = benchmark/parallel/tar-rs
-	url = git@github.com:alexcrichton/tar-rs.git
-[submodule "benchmark/parallel/commonlibrary_rust_ylong_runtime"]
-	path = benchmark/parallel/commonlibrary_rust_ylong_runtime
-	url = https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git
