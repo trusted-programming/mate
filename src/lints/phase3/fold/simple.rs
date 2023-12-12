@@ -83,7 +83,6 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
 
                 let src_map = cx.sess().source_map();
                 let recv_snip = src_map.span_to_snippet(recv.span).unwrap();
-                assert!(cls_body.params.is_empty());
                 let pat_span = cls_body.params[0].span.to(cls_body.params[cls_body.params.len() - 1].span);
                 let pat_snip = src_map.span_to_snippet(pat_span).unwrap();
                 let rhs_snip = src_map.span_to_snippet(rhs.span).unwrap();

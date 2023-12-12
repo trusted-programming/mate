@@ -55,10 +55,15 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
             // Check for a single branched if.
             if let ExprKind::If(cond, then, None) = &top_expr.kind {
                 let src_map = cx.sess().source_map();
-                let pat_snip = src_map.span_to_snippet(for_each_cls.fn_decl_span).unwrap();
+                let pat_snip =
+                    if !cls_body.params.is_empty() {
+                        let fst_span = cls_body.params[0].span;
+                        let lst_span = cls_body.params[cls_body.params.len() - 1].span;
+                        src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
+                    } else { String::new() };
                 let cond_snip = src_map.span_to_snippet(cond.span).unwrap();
                 let then_snip = src_map.span_to_snippet(then.span).unwrap();
-                let suggestion = format!("filter(&{pat_snip} {cond_snip}).for_each({pat_snip} {then_snip})");
+                let suggestion = format!("filter(|&{pat_snip}| {cond_snip}).for_each(|{pat_snip}| {then_snip})");
                 cx.struct_span_lint(
                     WARN_FILTER_SIMPLE,
                     *span,
