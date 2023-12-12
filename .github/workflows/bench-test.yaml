@@ -1,0 +1,80 @@
+name: bench-test
+on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  tar:
+    runs-on: ubuntu-latest
+    name: tar-rs lint fix passes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Repository name with owner. For example, actions/checkout
+          repository: "alexcrichton/tar-rs"
+      - name: install dylint
+        run: cargo install cargo-dylint dylint-link
+
+      - name: add Cargo.toml dylint lib link
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+
+      - name: lint fix
+        run: |
+          MAX_ATTEMPTS=6
+          count=0
+          prev_output=""
+
+          while [ $count -lt $MAX_ATTEMPTS ]; do
+              output=$(cargo dylint --all --workspace --fix -- --allow-dirty)
+              if [ "$output" == "$prev_output" ]; then
+                  echo "Output stabilized"
+                  break
+              fi
+              prev_output=$output
+              ((count++))
+              echo "Attempt $count of $MAX_ATTEMPTS"
+          done
+
+          if [ $count -eq $MAX_ATTEMPTS ]; then
+              echo "Reached maximum attempts without stabilization"
+              exit 1
+          fi
+  tar:
+    runs-on: ubuntu-latest
+    name: tar-rs lint fix passes
+    steps:
+      - uses: clone repo
+        run: git clone https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git
+
+      - uses: cd
+        run: cd commonlibrary_rust_ylong_runtime
+        
+      - name: install dylint
+        run: cargo install cargo-dylint dylint-link
+
+      - name: add Cargo.toml dylint lib link
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+
+      - name: lint fix
+        run: |
+          MAX_ATTEMPTS=6
+          count=0
+          prev_output=""
+
+          while [ $count -lt $MAX_ATTEMPTS ]; do
+              output=$(cargo dylint --all --workspace --fix -- --allow-dirty)
+              if [ "$output" == "$prev_output" ]; then
+                  echo "Output stabilized"
+                  break
+              fi
+              prev_output=$output
+              ((count++))
+              echo "Attempt $count of $MAX_ATTEMPTS"
+          done
+
+          if [ $count -eq $MAX_ATTEMPTS ]; then
+              echo "Reached maximum attempts without stabilization"
+              exit 1
+          fi
