@@ -41,16 +41,16 @@ jobs:
               echo "Reached maximum attempts without stabilization"
               exit 1
           fi
-  tar:
+  commonlibrary:
     runs-on: ubuntu-latest
-    name: tar-rs lint fix passes
+    name: commonlibrary_rust_ylong_runtime lint fix passes
     steps:
-      - uses: clone repo
+      - name: clone repo
         run: git clone https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git
 
-      - uses: cd
+      - name: cd
         run: cd commonlibrary_rust_ylong_runtime
-        
+
       - name: install dylint
         run: cargo install cargo-dylint dylint-link
 
