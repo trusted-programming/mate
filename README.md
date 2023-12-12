@@ -32,6 +32,8 @@ prerequisites:
     cargo dylint --all --workspace --fix -- --allow-dirty
     # lint and fix ignoring errors if there are any
     cargo dylint --all --workspace --fix -- --allow-dirty --broken-code
+    # count warnings by type
+    cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
     ```
 
 In the above example, the libraries are found via [workspace metadata], which is the recommended way. For additional ways of finding libraries, see [How Dylint works].
