@@ -31,7 +31,7 @@ impl Visitor<'_> for Validator {
             }
             ExprKind::Await(e, _) => {
                 self.is_async = true;
-                self.visit_expr(&e)
+                self.visit_expr(e)
             }
             _ => walk_expr(self, ex),
         }
@@ -48,8 +48,8 @@ impl EarlyLintPass for ForEach {
                 has_early_ret: false,
                 is_async: false,
             };
-            cft.visit_block(&block);
-            cft.visit_expr(&iter);
+            cft.visit_block(block);
+            cft.visit_expr(iter);
             if cft.has_early_ret || cft.is_async {
                 return;
             }
