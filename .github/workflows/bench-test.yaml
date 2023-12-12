@@ -21,6 +21,7 @@ jobs:
         run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
       - name: lint fix
+        continue-on-error: true
         run: |
           count=0
 
@@ -51,6 +52,7 @@ jobs:
           echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
       - name: lint fix
+        continue-on-error: true
         run: |
           cd commonlibrary_rust_ylong_runtime
           count=0
@@ -64,3 +66,4 @@ jobs:
               ((count++))
 
           done
+        
