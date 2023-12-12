@@ -29,6 +29,9 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     name: ${{ matrix.toolchain }} / clippy
+    env:
+      RUSTFLAGS: -D warnings
+
     permissions:
       contents: read
       checks: write

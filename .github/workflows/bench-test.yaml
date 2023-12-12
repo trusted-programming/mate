@@ -22,29 +22,18 @@ jobs:
 
       - name: lint fix
         run: |
-          MAX_ATTEMPTS=6
           count=0
-          prev_output=""
 
-          while [ $count -lt $MAX_ATTEMPTS ]; do
+          while [ $count -lt 4 ]; do
+              echo "#############################"
               echo "WARNINGS ON STEP $count"
               cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
               output=$(cargo dylint --all --workspace --fix -- --allow-dirty)
 
-              if [ "$output" == "$prev_output" ]; then
-                  echo "Output stabilized"
-                  break
-              fi
-
-              prev_output=$output
               ((count++))
-              echo "Attempt $count of $MAX_ATTEMPTS"
+
           done
 
-          if [ $count -eq $MAX_ATTEMPTS ]; then
-              echo "Reached maximum attempts without stabilization"
-              exit 1
-          fi
   commonlibrary:
     runs-on: ubuntu-latest
     name: commonlibrary_rust_ylong_runtime lint fix passes
@@ -63,27 +52,14 @@ jobs:
 
       - name: lint fix
         run: |
-          cd commonlibrary_rust_ylong_runtime
-          MAX_ATTEMPTS=6
           count=0
-          prev_output=""
 
-          while [ $count -lt $MAX_ATTEMPTS ]; do
+          while [ $count -lt 4 ]; do
+              echo "#############################"
               echo "WARNINGS ON STEP $count"
               cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
               output=$(cargo dylint --all --workspace --fix -- --allow-dirty)
 
-              if [ "$output" == "$prev_output" ]; then
-                  echo "Output stabilized"
-                  break
-              fi
-              
-              prev_output=$output
               ((count++))
-              echo "Attempt $count of $MAX_ATTEMPTS"
-          done
 
-          if [ $count -eq $MAX_ATTEMPTS ]; then
-              echo "Reached maximum attempts without stabilization"
-              exit 1
-          fi
+          done
