@@ -30,7 +30,6 @@ jobs:
             while [ $count -lt 4 ]; do
               echo "#############################"
               echo "WARNINGS ON STEP $count"
-              cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
               cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
 
               count=$((count + 1))
@@ -65,7 +64,6 @@ jobs:
           while [ $count -lt 4 ]; do
               echo "#############################"
               echo "WARNINGS ON STEP $count"
-              cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
               cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
 
               count=$((count + 1))
