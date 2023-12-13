@@ -25,14 +25,15 @@ jobs:
 
       - name: lint fix
         run: |
+          set +e  # Continue on errors
           count=0
 
           while [ $count -lt 4 ]; do
-              echo "#############################"
-              echo "WARNINGS ON STEP $count"
-              cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs
+          echo "#############################"
+          echo "WARNINGS ON STEP $count"
+          cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
 
-              ((count++))
+              count=$((count + 1))
 
           done
 
@@ -56,17 +57,17 @@ jobs:
           echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
       - name: lint fix
-        shell: bash
         run: |
           cd commonlibrary_rust_ylong_runtime
+          set +e  # Continue on errors
           count=0
 
           while [ $count -lt 4 ]; do
-              echo "#############################"
-              echo "WARNINGS ON STEP $count"
-              cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs
+          echo "#############################"
+          echo "WARNINGS ON STEP $count"
+          cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
 
-              ((count++))
+              count=$((count + 1))
 
           done
         
