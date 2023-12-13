@@ -29,9 +29,9 @@ prerequisites:
     # lint only
     cargo dylint --all --workspace
     # lint and fix, if code breaks(not compiling) it will revert to original
-    cargo dylint --all --workspace --fix -- --allow-dirty
+    cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs
     # lint and fix ignoring errors if there are any
-    cargo dylint --all --workspace --fix -- --allow-dirty --broken-code
+    cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code
     # count warnings by type
     cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
     ```
