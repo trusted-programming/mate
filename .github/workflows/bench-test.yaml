@@ -29,7 +29,7 @@ jobs:
           cargo add rayon --package ylong_ffrt
           cargo add rayon --package ylong_io
           cargo add rayon --package ylong_runtime_macros
-          
+
       - name: lint fix
         run: |
           count=0
@@ -64,6 +64,7 @@ jobs:
 
       - name: lint fix
         run: |
+          cd commonlibrary_rust_ylong_runtime
           cargo add rayon --package ylong_runtime
           cargo add rayon --package ylong_ffrt
           cargo add rayon --package ylong_io
