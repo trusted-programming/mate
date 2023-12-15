@@ -29,7 +29,7 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
             // Collect a set of local definitions, the expression we wish to analyze and
             // the statements following it
             let (pat_expr, local_defs_span, body_span) =
-                match crate::lints::get_pat_expr_and_spans(&cls_body.value) {
+                match crate::lints::get_pat_expr_and_spans(cls_body.value) {
                     Ok(v) => v,
                     _ => return,
                 };

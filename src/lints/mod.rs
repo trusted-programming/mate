@@ -5,6 +5,7 @@ pub mod phase1;
 pub mod phase2;
 pub mod phase3;
 pub mod phase4;
+pub mod rayon;
 
 // Useful helpers
 
@@ -39,7 +40,7 @@ fn get_pat_expr_and_spans<'a>(
                 let mut body = vec![];
                 let mut add_locals = true;
                 for s in block.stmts.iter() {
-                    if is_local_def(s) & &add_locals {
+                    if is_local_def(s) & add_locals {
                         local_defs.push(s.span);
                     } else {
                         add_locals = false;

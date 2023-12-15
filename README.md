@@ -1,13 +1,10 @@
 # cargo-mate
 
-
 ## how to run
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
 
-prerequisites:
-    - rustup
-    - latest version of rust stable if not run `rustup update`
+prerequisites: - rustup - latest version of rust stable if not run `rustup update`
 
 1. Install `cargo-dylint` and `dylint-link`:
 
@@ -34,14 +31,12 @@ prerequisites:
     cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code
     # count warnings by type
     cargo dylint --workspace --all 2>&1 | grep -i 'warning' | grep -iv 'generated' | sort | uniq -c | sort -nr
-    ```
+   ```
 
 In the above example, the libraries are found via [workspace metadata], which is the recommended way. For additional ways of finding libraries, see [How Dylint works].
 
+## benchmarks
 
-### benchmarks
--  https://github.com/alexcrichton/tar-rs
--  https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime
--  https://gitee.com/organizations/openharmony/projects?lang=Rust
-
-
+- https://gitee.com/openharmony/request_request
+- https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime
+- https://gitee.com/organizations/openharmony/projects?lang=Rust
