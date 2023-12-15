@@ -1,10 +1,16 @@
 error: rayon::prelude::* is not imported
+  --> $DIR/rayon_missing.rs:2:1
+   |
+LL | use std::thread;
+   | ^
    |
    = note: `-D lint::rayon-import` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(lint::rayon_import)]`
 help: consider adding this import
    |
 LL + 
+LL + #![allow(unused_imports)]
+LL +                         
 LL + use rayon::prelude::*;
    |
 

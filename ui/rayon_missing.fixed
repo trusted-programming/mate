@@ -1,4 +1,8 @@
 // run-rustfix
+
+#![allow(unused_imports)]
+                        
+use rayon::prelude::*;
 use std::thread;
 use std::time::Duration;
 

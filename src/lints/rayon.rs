@@ -59,7 +59,9 @@ impl LateLintPass<'_> for RayonImport {
                     diag.span_suggestion(
                         suggestion_span,
                         "consider adding this import",
-                        "\nuse rayon::prelude::*;\n".to_string(),
+                        "\n#![allow(unused_imports)]
+                        \nuse rayon::prelude::*;\n"
+                            .to_string(),
                         rustc_errors::Applicability::MachineApplicable,
                     )
                 },
