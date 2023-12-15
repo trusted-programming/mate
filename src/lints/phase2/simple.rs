@@ -74,7 +74,7 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
             };
 
             let cond_snip = src_map.span_to_snippet(cond.span).unwrap();
-            let suggestion = format!("filter(|{pat_snip}| {{ let {pat_snip} = (pat_snip).as_ref(); {local_defs_snip} {cond_snip} }}).for_each(|{pat_snip}| {{ {local_defs_snip} {then_snip} }})");
+            let suggestion = format!("filter(|{pat_snip}| {{ let {pat_snip} = ({pat_snip}).as_ref(); {local_defs_snip} {cond_snip} }}).for_each(|{pat_snip}| {{ {local_defs_snip} {then_snip} }})");
             cx.struct_span_lint(
                 WARN_FILTER_SIMPLE,
                 *span,
