@@ -1,5 +1,5 @@
 use rustc_errors::Applicability;
-use rustc_hir::{Expr, ExprKind, StmtKind};
+use rustc_hir::{Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_session::{declare_lint_pass, declare_tool_lint};
 use rustc_span::symbol::Symbol;
@@ -26,56 +26,68 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
             let ExprKind::Closure(for_each_cls) = &args[0].kind else { return; };
             let cls_body = hir_map.body(for_each_cls.body);
 
-            // Currently this will only create a lint if there's a single top-level if statement.
-            // It is entirely reasonable to extract local declarations here as well.
-            // This would enable more cases to be matched on.
-            let top_expr = match cls_body.value.kind {
-                ExprKind::Block(block, _) => {
-                    match block.stmts.len() {
-                        0 => {
-                            if block.expr.is_none() {
-                                return;
-                            }
-                            block.expr.unwrap()
-                        }
-                        // TODO: Does this always return?
-                        1 => {
-                            if block.expr.is_some() {
-                                return;
-                            }
-                            let StmtKind::Expr(expr) = &block.stmts[0].kind else { return; };
-                            expr
-                        }
-                        _ => return,
-                    }
-                }
-                _ => cls_body.value
-            };
+            // Collect a set of local definitions, the expression we wish to analyze and
+            // the statements following it
+            let (pat_expr, local_defs_span, body_span) =
+                match crate::lints::get_pat_expr_and_spans(&cls_body.value) {
+                    Ok(v) => v,
+                    _ => return,
+                };
+
+            // We should only have one statement left
+            if body_span.is_some() { return }
 
             // Check for a single branched if.
-            if let ExprKind::If(cond, then, None) = &top_expr.kind {
-                let src_map = cx.sess().source_map();
-                let pat_snip =
-                    if !cls_body.params.is_empty() {
-                        let fst_span = cls_body.params[0].span;
-                        let lst_span = cls_body.params[cls_body.params.len() - 1].span;
-                        src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
-                    } else { String::new() };
-                let cond_snip = src_map.span_to_snippet(cond.span).unwrap();
-                let then_snip = src_map.span_to_snippet(then.span).unwrap();
-                let suggestion = format!("filter(|&{pat_snip}| {cond_snip}).for_each(|{pat_snip}| {then_snip})");
-                cx.struct_span_lint(
-                    WARN_FILTER_SIMPLE,
-                    *span,
-                    "implicit filter inside `for_each`",
-                    |diag| {
-                        diag.span_suggestion(
-                            *span,
-                            "try lifting the filter iterator",
-                            suggestion,
-                            Applicability::MachineApplicable)
-                    });
+            let ExprKind::If(cond, then, None) = &pat_expr.kind else {
+                return;
+            };
+            if let ExprKind::Let(_) = cond.kind {
+                return;
             }
+
+            let src_map = cx.sess().source_map();
+            let ExprKind::Block(then_block, _) = then.kind else {
+                return;
+            };
+            let then_snip = if !then_block.stmts.is_empty() {
+                let fst_span = then_block.stmts[0].span;
+                let lst_span = match then_block.expr {
+                    None => then_block.stmts[then_block.stmts.len() - 1].span,
+                    Some(e) => e.span,
+                };
+                src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
+            } else {
+                then_block
+                    .expr
+                    .map_or(String::new(), |e| src_map.span_to_snippet(e.span).unwrap())
+            };
+
+            let local_defs_snip =
+                local_defs_span.map_or(String::new(), |sp| src_map.span_to_snippet(sp).unwrap());
+
+            let pat_snip = if !cls_body.params.is_empty() {
+                let fst_span = cls_body.params[0].span;
+                let lst_span = cls_body.params[cls_body.params.len() - 1].span;
+                src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
+            } else {
+                String::new()
+            };
+
+            let cond_snip = src_map.span_to_snippet(cond.span).unwrap();
+            let suggestion = format!("filter(|{pat_snip}| {{ let {pat_snip} = (pat_snip).as_ref(); {local_defs_snip} {cond_snip} }}).for_each(|{pat_snip}| {{ {local_defs_snip} {then_snip} }})");
+            cx.struct_span_lint(
+                WARN_FILTER_SIMPLE,
+                *span,
+                "implicit filter inside `for_each`",
+                |diag| {
+                    diag.span_suggestion(
+                        *span,
+                        "try lifting the filter iterator",
+                        suggestion,
+                        Applicability::MachineApplicable,
+                    )
+                },
+            );
         }
     }
 }
