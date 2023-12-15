@@ -6,35 +6,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tar:
+  request:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-    name: tar-rs lint fix passes
+    name:  request_request lint fix passes
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # Repository name with owner. For example, actions/checkout
-          repository: "alexcrichton/tar-rs"
+
+      - name: clone repo
+        run: git clone https://gitee.com/openharmony/request_request.git
+
       - name: install dylint
         run: cargo install cargo-dylint dylint-link
 
       - name: add Cargo.toml dylint lib link
-        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+        run: |
+          cd request_request
+          echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
+      - name: add rayon
+        run: |
+          cd request_request
+          cargo add rayon --package request
+          cargo add rayon --package download_server
+      
       - name: lint fix
         run: |
-          cargo add rayon --package ylong_runtime
-          cargo add rayon --package ylong_ffrt
-          cargo add rayon --package ylong_io
-          cargo add rayon --package ylong_runtime_macros
-
-      - name: lint fix
-        run: |
+          cd request_request
+          set +e  # Continue on errors
           count=0
 
-            while [ $count -lt 4 ]; do
+          while [ $count -lt 4 ]; do
               echo "#############################"
               echo "WARNINGS ON STEP $count"
               cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
@@ -62,7 +65,7 @@ jobs:
           cd commonlibrary_rust_ylong_runtime
           echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
-      - name: lint fix
+      - name: add rayon
         run: |
           cd commonlibrary_rust_ylong_runtime
           cargo add rayon --package ylong_runtime
