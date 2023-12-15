@@ -6,14 +6,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  request:
+  request_request:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    name:  request_request lint fix passes
+    name:  lint fix
     steps:
-
       - name: clone repo
         run: git clone https://gitee.com/openharmony/request_request.git
 
@@ -21,29 +17,30 @@ jobs:
         run: cargo install cargo-dylint dylint-link
 
       - name: add Cargo.toml dylint lib link
-        run: |
-          cd request_request
-          echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+        working-directory: ./request_request
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
       - name: add rayon
+        working-directory: ./request_request
         run: |
-          cd request_request
           cargo add rayon --package request
           cargo add rayon --package download_server
       
       - name: lint fix
-        run: |
-          cd request_request
-          cargo dylint --all --workspace --fix
+        working-directory: ./request_request
+        run: cargo dylint --all --workspace --fix -- --broken_code
+        
+      - name: cargo check
+        working-directory: ./request_request
+        run: cargo check
 
-  commonlibrary:
+
+
+
+  commonlibrary_rust_ylong_runtime:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    name: commonlibrary_rust_ylong_runtime lint fix passes
+    name: lint fix
     steps:
-
       - name: clone repo
         run: git clone https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git
 
@@ -51,20 +48,21 @@ jobs:
         run: cargo install cargo-dylint dylint-link
 
       - name: add Cargo.toml dylint lib link
-        run: |
-          cd commonlibrary_rust_ylong_runtime
-          echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+        working-directory: ./commonlibrary_rust_ylong_runtime
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
 
       - name: add rayon
+        working-directory: ./commonlibrary_rust_ylong_runtime
         run: |
-          cd commonlibrary_rust_ylong_runtime
           cargo add rayon --package ylong_runtime
           cargo add rayon --package ylong_ffrt
           cargo add rayon --package ylong_io
           cargo add rayon --package ylong_runtime_macros
       
       - name: lint fix
-        run: |
-          cd commonlibrary_rust_ylong_runtime
-          cargo dylint --all --workspace --fix
+        working-directory: ./commonlibrary_rust_ylong_runtime
+        run: cargo dylint --all --workspace --fix -- --broken_code
         
+      - name: cargo check
+        working-directory: ./commonlibrary_rust_ylong_runtime
+        run: cargo check
