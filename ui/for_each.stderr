@@ -1,7 +1,7 @@
 error: use a for_each to enable iterator refinement
-  --> $DIR/for_each.rs:7:5
+  --> $DIR/for_each.rs:8:5
    |
-LL | /     for i in 1..=100 {
+LL | /     for _ in 1..=100 {
 LL | |         thread::sleep(Duration::from_secs(1));
 LL | |     }
    | |_____^
@@ -10,24 +10,10 @@ LL | |     }
    = help: to override `-D warnings` add `#[allow(lint::warn_foreach)]`
 help: try using `for_each` on the iterator
    |
-LL ~     (1..=100).into_iter().for_each(|i| {
+LL ~     (1..=100).into_iter().for_each(|_| {
 LL +         thread::sleep(Duration::from_secs(1));
 LL +     });
    |
 
-error: rayon::prelude::* is not imported
-  --> $DIR/for_each.rs:2:1
-   |
-LL | use std::thread;
-   | ^
-   |
-   = note: `-D lint::rayon-import` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(lint::rayon_import)]`
-help: consider adding this import
-   |
-LL + 
-LL + use rayon::prelude::*;
-   |
-
-error: aborting due to 2 previous errors
+error: aborting due to previous error
 

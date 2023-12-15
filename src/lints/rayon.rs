@@ -26,15 +26,11 @@ impl LateLintPass<'_> for RayonImport {
         for item_id in cx.tcx.hir().items() {
             let item = cx.tcx.hir().item(item_id);
             if let ItemKind::Use(path, UseKind::Glob) = &item.kind {
-                if path.segments.len() == 3 {
+                if path.segments.len() == 2 {
                     let first_segment = path.segments[0].ident.name.as_str();
                     let second_segment = path.segments[1].ident.name.as_str();
-                    let third_segment = path.segments[2].ident.as_str();
 
-                    if first_segment == "rayon"
-                        && second_segment == "prelude"
-                        && third_segment == "*"
-                    {
+                    if first_segment == "rayon" && second_segment == "prelude" {
                         found_rayon_prelude = true;
                         break;
                     }

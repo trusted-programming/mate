@@ -1,8 +1,4 @@
 error: rayon::prelude::* is not imported
-  --> $DIR/rayon.rs:2:1
-   |
-LL | fn main() {}
-   | ^
    |
    = note: `-D lint::rayon-import` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(lint::rayon_import)]`

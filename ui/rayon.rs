@@ -1,2 +1,0 @@
-// run-rustfix
-fn main() {}

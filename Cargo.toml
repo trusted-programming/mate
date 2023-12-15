@@ -6,6 +6,17 @@ description = "description goes here"
 edition = "2021"
 publish = false
 
+[[example]]
+name = "for_each"
+path = "ui/for_each.rs"
+
+[[example]]
+name = "rayon_present"
+path = "ui/rayon_present.rs"
+
+[[example]]
+name = "rayon_missing"
+path = "ui/rayon_missing.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
