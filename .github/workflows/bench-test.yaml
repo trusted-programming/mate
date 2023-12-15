@@ -34,17 +34,7 @@ jobs:
       - name: lint fix
         run: |
           cd request_request
-          set +e  # Continue on errors
-          count=0
-
-          while [ $count -lt 4 ]; do
-              echo "#############################"
-              echo "WARNINGS ON STEP $count"
-              cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
-
-              count=$((count + 1))
-
-          done
+          cargo dylint --all --workspace --fix
 
   commonlibrary:
     runs-on: ubuntu-latest
@@ -76,15 +66,5 @@ jobs:
       - name: lint fix
         run: |
           cd commonlibrary_rust_ylong_runtime
-          set +e  # Continue on errors
-          count=0
-
-          while [ $count -lt 4 ]; do
-              echo "#############################"
-              echo "WARNINGS ON STEP $count"
-              cargo dylint --all --workspace --fix -- --allow-dirty  --allow-no-vcs
-
-              count=$((count + 1))
-
-          done
+          cargo dylint --all --workspace --fix
         
