@@ -28,7 +28,7 @@ jobs:
       
       - name: lint fix
         working-directory: ./request_request
-        run: cargo dylint --all --workspace --fix -- --broken_code
+        run:  cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code
         
       - name: cargo check
         working-directory: ./request_request
@@ -61,7 +61,7 @@ jobs:
       
       - name: lint fix
         working-directory: ./commonlibrary_rust_ylong_runtime
-        run: cargo dylint --all --workspace --fix -- --broken_code
+        run:  cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code
         
       - name: cargo check
         working-directory: ./commonlibrary_rust_ylong_runtime
