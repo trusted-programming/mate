@@ -54,3 +54,29 @@ jobs:
 
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features
+
+  test:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.toolchain }} / test
+
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [nightly-2023-10-06]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: install dylint
+        run: cargo install cargo-dylint dylint-link
+
+      - name: cargo test
+        run: cargo test 

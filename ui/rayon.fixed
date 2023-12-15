@@ -1,0 +1,4 @@
+// run-rustfix
+
+use rayon::prelude::*;
+fn main() {}
