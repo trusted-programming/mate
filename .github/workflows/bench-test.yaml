@@ -35,8 +35,9 @@ jobs:
         working-directory: ./request_request
         run: cargo check
 
-
-
+      - name: git diff
+        working-directory: ./request_request
+        run: git diff
 
   commonlibrary_rust_ylong_runtime:
     runs-on: ubuntu-latest
@@ -68,3 +69,7 @@ jobs:
       - name: cargo check
         working-directory: ./commonlibrary_rust_ylong_runtime
         run: cargo check
+
+      - name: git diff
+        working-directory: ./commonlibrary_rust_ylong_runtime
+        run: git diff
