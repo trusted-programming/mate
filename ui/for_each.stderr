@@ -1,8 +1,10 @@
 error: use a for_each to enable iterator refinement
-  --> $DIR/for_each.rs:8:5
+  --> $DIR/for_each.rs:9:5
    |
 LL | /     for _ in 1..=100 {
 LL | |         thread::sleep(Duration::from_secs(1));
+LL | |
+LL | |         let _res = build_request_builder();
 LL | |     }
    | |_____^
    |
@@ -12,8 +14,25 @@ help: try using `for_each` on the iterator
    |
 LL ~     (1..=100).into_iter().for_each(|_| {
 LL +         thread::sleep(Duration::from_secs(1));
+LL + 
+LL +         let _res = build_request_builder();
 LL +     });
    |
 
-error: aborting due to previous error
+error: use a for_each to enable iterator refinement
+  --> $DIR/for_each.rs:23:5
+   |
+LL | /     for (key, value) in a_map.iter() {
+LL | |         request = (key.clone(), value.clone());
+LL | |     }
+   | |_____^
+   |
+help: try using `for_each` on the iterator
+   |
+LL ~     (a_map.iter()).into_iter().for_each(|(key, value)| {
+LL +         request = (key.clone(), value.clone());
+LL +     });
+   |
+
+error: aborting due to 2 previous errors
 
