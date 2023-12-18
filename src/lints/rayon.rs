@@ -59,6 +59,7 @@ impl LateLintPass<'_> for RayonImport {
                     diag.span_suggestion(
                         suggestion_span,
                         "consider adding this import",
+                        // FIXME: would be nice to find a better solution
                         "\n#![allow(unused_imports)]
                         \nuse rayon::prelude::*;\n"
                             .to_string(),
