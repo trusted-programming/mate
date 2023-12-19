@@ -1,4 +1,4 @@
-# cargo-mate
+# Mate
 
 ## how to run
 
