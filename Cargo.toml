@@ -32,6 +32,11 @@ path = "ui/warn_filter_simple.rs"
 name = "warn_fold_simple"
 path = "ui/warn_fold_simple.rs"
 
+[[example]]
+name = "warn_par_fold_simple"
+path = "ui/warn_par_fold_simple.rs"
+
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ["cdylib"]
