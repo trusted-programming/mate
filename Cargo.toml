@@ -18,6 +18,15 @@ path = "ui/rayon_present.rs"
 name = "rayon_missing"
 path = "ui/rayon_missing.rs"
 
+[[example]]
+name = "warn_filter_simple_flipped"
+path = "ui/warn_filter_simple_flipped.rs"
+
+
+[[example]]
+name = "warn_filter_simple"
+path = "ui/warn_filter_simple.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ["cdylib"]

@@ -11,6 +11,7 @@ declare_tool_lint! {
 }
 
 declare_lint_pass!(FilterSimpleFlipped => [WARN_FILTER_SIMPLE_FLIPPED]);
+
 impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
         let hir_map = cx.tcx.hir();
