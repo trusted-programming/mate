@@ -6,8 +6,8 @@ LL | |         request = (key.clone(), value.clone());
 LL | |     }
    | |_____^
    |
-   = note: `-D lint::warn-foreach` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(lint::warn_foreach)]`
+   = note: `-D warn-foreach` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(warn_foreach)]`
 help: try using `for_each` on the iterator
    |
 LL ~     (a_map.iter()).into_iter().for_each(|(key, value)| {

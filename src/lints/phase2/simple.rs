@@ -1,11 +1,11 @@
 use rustc_errors::Applicability;
 use rustc_hir::{Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_session::{declare_lint_pass, declare_tool_lint};
+use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::symbol::Symbol;
 
-declare_tool_lint! {
-    pub lint::WARN_FILTER_SIMPLE,
+declare_lint! {
+    pub WARN_FILTER_SIMPLE,
     Warn,
     "suggest using explicit filter iterator"
 }

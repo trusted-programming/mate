@@ -1,0 +1,13 @@
+error: implicit fold
+  --> $DIR/warn_fold_simple.rs:16:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         sum += num;
+LL | |     });
+   | |______^ help: try using `fold` instead: `sum += numbers.iter().map(|&num|  num).fold(0, |mut sum, v| { sum += v; sum })`
+   |
+   = note: `-D warn-fold-simple` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(warn_fold_simple)]`
+
+error: aborting due to previous error
+

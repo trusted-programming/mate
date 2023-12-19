@@ -1,7 +1,7 @@
 use rustc_errors::Applicability;
 use rustc_hir::{BinOpKind, Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_session::{declare_lint_pass, declare_tool_lint};
+use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::Symbol;
 
 enum MonoidType {
@@ -9,8 +9,8 @@ enum MonoidType {
     Add,
 }
 
-declare_tool_lint! {
-    pub lint::WARN_FOLD_SIMPLE,
+declare_lint! {
+    pub WARN_FOLD_SIMPLE,
     Warn,
     "suggest using explicit fold"
 }

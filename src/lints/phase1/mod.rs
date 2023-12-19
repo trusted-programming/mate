@@ -2,9 +2,9 @@ use rustc_ast::ast::{Expr, ExprKind};
 use rustc_ast::visit::{walk_expr, Visitor};
 use rustc_errors::Applicability;
 use rustc_lint::{EarlyContext, EarlyLintPass, LintContext};
-use rustc_session::{declare_lint_pass, declare_tool_lint};
+use rustc_session::{declare_lint, declare_lint_pass};
 
-declare_tool_lint! {
+declare_lint! {
     /// ### What it does
     ///
     /// ### Why is this bad?
@@ -13,7 +13,7 @@ declare_tool_lint! {
     ///
     /// ### Example
 
-    pub lint::WARN_FOREACH,
+    pub WARN_FOREACH,
     Warn,
     "use a for_each to enable iterator refinement."
 }
@@ -39,6 +39,7 @@ impl Visitor<'_> for Validator {
 }
 
 declare_lint_pass!(ForEach => [WARN_FOREACH]);
+
 impl EarlyLintPass for ForEach {
     fn check_expr(&mut self, cx: &EarlyContext<'_>, expr: &Expr) {
         // Match on for loop expressions

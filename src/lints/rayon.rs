@@ -1,9 +1,9 @@
 use rustc_hir::{ItemKind, UseKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_session::{declare_lint_pass, declare_tool_lint};
+use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::Span;
 
-declare_tool_lint! {
+declare_lint! {
     /// ### What it does
     ///
     /// ### Why is this bad?
@@ -12,7 +12,7 @@ declare_tool_lint! {
     ///
     /// ### Example
 
-    pub lint::RAYON_IMPORT,
+    pub RAYON_IMPORT,
     Warn,
     "check if rayon prelude is imported."
 }
@@ -60,9 +60,7 @@ impl LateLintPass<'_> for RayonImport {
                         suggestion_span,
                         "consider adding this import",
                         // FIXME: would be nice to find a better solution
-                        "\n#![allow(unused_imports)]
-                        \nuse rayon::prelude::*;\n"
-                            .to_string(),
+                        "\n#[allow(unused_imports)]\nuse rayon::prelude::*;\n".to_string(),
                         rustc_errors::Applicability::MachineApplicable,
                     )
                 },

@@ -1,8 +1,8 @@
 [package]
-name = "cargo-mate"
+name = "mate"
 version = "0.1.0"
 authors = ["Cameron Low <email>", "Luca Carlig <luca.carlig@huawei.com"]
-description = "description goes here"
+description = "library of lints for automatic parallelization"
 edition = "2021"
 publish = false
 
@@ -26,6 +26,11 @@ path = "ui/warn_filter_simple_flipped.rs"
 [[example]]
 name = "warn_filter_simple"
 path = "ui/warn_filter_simple.rs"
+
+
+[[example]]
+name = "warn_fold_simple"
+path = "ui/warn_fold_simple.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
