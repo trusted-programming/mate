@@ -6,6 +6,22 @@ description = "library of lints for automatic parallelization"
 edition = "2021"
 publish = false
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b105fb4c39bc1a010807a6c076193cef8d93c109" }
+dylint_linting = "2.5.0"
+if_chain = "1.0.2"
+
+[dev-dependencies]
+dylint_testing = "2.5.0"
+rayon = "1.8"
+
+[package.metadata.rust-analyzer]
+rustc_private = true
+
 [[example]]
 name = "for_each"
 path = "ui/for_each.rs"
@@ -35,21 +51,3 @@ path = "ui/warn_fold_simple.rs"
 [[example]]
 name = "warn_par_fold_simple"
 path = "ui/warn_par_fold_simple.rs"
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b105fb4c39bc1a010807a6c076193cef8d93c109" }
-dylint_linting = "2.5.0"
-if_chain = "1.0.2"
-
-
-[dev-dependencies]
-dylint_testing = "2.5.0"
-rayon = "1.8"
-
-[package.metadata.rust-analyzer]
-rustc_private = true

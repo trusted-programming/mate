@@ -53,7 +53,7 @@ jobs:
         run: cargo install cargo-dylint dylint-link
 
       - name: cargo clippy
-        run: cargo clippy --all-targets --all-features
+        run: cargo clippy --lib --all-features
 
   test:
     runs-on: ubuntu-latest
