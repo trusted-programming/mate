@@ -11,6 +11,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 clippy_utils = { workspace = true }
+utils = { workspace = true }
+
 dylint_linting = "2.5.0"
 
 [dev-dependencies]

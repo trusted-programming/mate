@@ -395,6 +395,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fold"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+ "utils",
+]
+
+[[package]]
 name = "for_each"
 version = "0.1.0"
 dependencies = [
@@ -640,6 +650,7 @@ dependencies = [
  "dylint_linting",
  "dylint_testing",
  "filter",
+ "fold",
  "for_each",
  "rayon_import",
 ]
