@@ -11,22 +11,20 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b105fb4c39bc1a010807a6c076193cef8d93c109" }
-dylint_linting = { version = "2.5.0", features = ["constituent"] }
-if_chain = "1.0.2"
-
-[dev-dependencies]
-dylint_testing = "2.5.0"
-rayon = "1.8"
+rayon_import = { path = "rayon_import", features = ["rlib"] }
+dylint_linting = { version = "2.5.0" }
 
 [package.metadata.rust-analyzer]
 rustc_private = true
 
+[workspace]
+members = ["rayon_import"]
 
-[[example]]
-name = "rayon_present"
-path = "ui/rayon_present.rs"
+[dev-dependencies]
+dylint_testing = "2.5.0"
 
-[[example]]
-name = "rayon_missing"
-path = "ui/rayon_missing.rs"
+[workspace.dependencies]
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b105fb4c39bc1a010807a6c076193cef8d93c109" }
+
+[workspace.metadata.dylint]
+clibraries = [{ path = "../mate" }]
