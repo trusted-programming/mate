@@ -652,7 +652,7 @@ dependencies = [
  "filter",
  "fold",
  "for_each",
- "rayon_import",
+ "par_fold",
 ]
 
 [[package]]
@@ -720,6 +720,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
+name = "par_fold"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+ "rayon",
+]
+
+[[package]]
 name = "paste"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -773,16 +783,6 @@ checksum = "5ce3fb6ad83f861aac485e76e1985cd109d9a3713802152be56c3b1f0e0658ed"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
-]
-
-[[package]]
-name = "rayon_import"
-version = "0.1.0"
-dependencies = [
- "clippy_utils",
- "dylint_linting",
- "dylint_testing",
- "rayon",
 ]
 
 [[package]]

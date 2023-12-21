@@ -15,9 +15,22 @@ dylint_linting = "2.5.0"
 
 [dev-dependencies]
 dylint_testing = "2.5.0"
+rayon = "1.8.0"
 
 [package.metadata.rust-analyzer]
 rustc_private = true
 
 [features]
 rlib = ["dylint_linting/constituent"]
+
+[[example]]
+name = "rayon_present"
+path = "ui/rayon_present.rs"
+
+[[example]]
+name = "rayon_missing"
+path = "ui/rayon_missing.rs"
+
+[[example]]
+name = "par_fold_simple"
+path = "ui/par_fold_simple.rs"

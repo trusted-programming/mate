@@ -1,36 +1,24 @@
-#![feature(rustc_private)]
-#![warn(unused_extern_crates)]
-
-extern crate rustc_errors;
-extern crate rustc_hir;
-extern crate rustc_span;
-
 use rustc_hir::{ItemKind, UseKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
+use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::Span;
 
-dylint_linting::declare_late_lint! {
+declare_lint! {
     /// ### What it does
-    /// add rayon import to crate root
-    /// ### Why is this bad?
-    /// no rayon no par_iter traits
-    /// ### Example
-    /// ```rust
-    /// fn main() {}
-    /// ```
-    /// Use instead:
-    /// ```rust
-    /// use rayon::prelude::*;
     ///
-    /// fn main () {}
-    /// ```
+    /// ### Why is this bad?
+    ///
+    /// ### Known problems
+    ///
+    /// ### Example
+
     pub RAYON_IMPORT,
     Warn,
-    "check if rayon prelude is imported"
+    "check if rayon prelude is imported."
 }
-
 // TODO: add check for cargo.toml contains rayon
 
+declare_lint_pass!(RayonImport => [RAYON_IMPORT]);
 impl LateLintPass<'_> for RayonImport {
     fn check_crate(&mut self, cx: &LateContext<'_>) {
         let mut found_rayon_prelude = false;
@@ -79,9 +67,4 @@ impl LateLintPass<'_> for RayonImport {
             );
         }
     }
-}
-
-#[test]
-fn ui() {
-    dylint_testing::ui_test_examples(env!("CARGO_PKG_NAME"));
 }

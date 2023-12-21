@@ -1,56 +1,28 @@
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]
+#![feature(let_chains)]
 
-extern crate rustc_arena;
-extern crate rustc_ast;
-extern crate rustc_ast_pretty;
-extern crate rustc_attr;
-extern crate rustc_data_structures;
+#[cfg(not(feature = "rlib"))]
+dylint_linting::dylint_library!();
+
 extern crate rustc_errors;
 extern crate rustc_hir;
-extern crate rustc_hir_pretty;
-extern crate rustc_index;
-extern crate rustc_infer;
-extern crate rustc_lexer;
+extern crate rustc_lint;
 extern crate rustc_middle;
-extern crate rustc_mir_dataflow;
-extern crate rustc_parse;
+extern crate rustc_session;
 extern crate rustc_span;
-extern crate rustc_target;
-extern crate rustc_trait_selection;
 
-use rustc_lint::LateLintPass;
+mod par_fold_simple;
+mod rayon_import;
 
-dylint_linting::declare_late_lint! {
-    /// ### What it does
-    ///
-    /// ### Why is this bad?
-    ///
-    /// ### Known problems
-    /// Remove if none.
-    ///
-    /// ### Example
-    /// ```rust
-    /// // example code where a warning is issued
-    /// ```
-    /// Use instead:
-    /// ```rust
-    /// // example code that does not raise a warning
-    /// ```
-    pub PAR_FOLD,
-    Warn,
-    "description goes here"
-}
-
-impl<'tcx> LateLintPass<'tcx> for ParFold {
-    // A list of things you might check can be found here:
-    // https://doc.rust-lang.org/stable/nightly-rustc/rustc_lint/trait.LateLintPass.html
+#[allow(clippy::no_mangle_with_rust_abi)]
+#[cfg_attr(not(feature = "rlib"), no_mangle)]
+pub fn register_lints(_sess: &rustc_session::Session, lint_store: &mut rustc_lint::LintStore) {
+    lint_store.register_late_pass(|_| Box::new(par_fold_simple::ParFoldSimple));
+    lint_store.register_late_pass(|_| Box::new(rayon_import::RayonImport));
 }
 
 #[test]
 fn ui() {
-    dylint_testing::ui_test(
-        env!("CARGO_PKG_NAME"),
-        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("ui"),
-    );
+    dylint_testing::ui_test_examples(env!("CARGO_PKG_NAME"));
 }

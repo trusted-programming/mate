@@ -11,11 +11,10 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-rayon_import = { path = "lints/rayon_import", features = ["rlib"] }
 for_each = { path = "lints/for_each", features = ["rlib"] }
 filter = { path = "lints/filter", features = ["rlib"] }
 fold = { path = "lints/fold", features = ["rlib"] }
-
+par_fold = { path = "lints/par_fold", features = ["rlib"] }
 dylint_linting = { version = "2.5.0" }
 
 [package.metadata.rust-analyzer]
@@ -23,10 +22,10 @@ rustc_private = true
 
 [workspace]
 members = [
-    "lints/rayon_import",
     "lints/for_each",
     "lints/filter",
     "lints/fold",
+    "lints/par_fold",
     "utils",
 ]
 

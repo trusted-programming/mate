@@ -14,8 +14,7 @@ pub fn register_lints(sess: &rustc_session::Session, lint_store: &mut rustc_lint
     // PHASE 2
     filter::register_lints(sess, lint_store);
     // PHASE 3
-
-    // PREPARE RAYON FOR PHASE 4
-    rayon_import::register_lints(sess, lint_store);
+    fold::register_lints(sess, lint_store);
     // PHASE 4
+    par_fold::register_lints(sess, lint_store);
 }
