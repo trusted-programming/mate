@@ -1,10 +1,11 @@
 #![feature(rustc_private)]
-#![warn(unused_extern_crates)]
 #![feature(let_chains)]
 
 #[cfg(not(feature = "rlib"))]
 dylint_linting::dylint_library!();
 
+#[cfg(feature = "rlib")]
+extern crate rustc_driver;
 extern crate rustc_errors;
 extern crate rustc_hir;
 extern crate rustc_lint;
