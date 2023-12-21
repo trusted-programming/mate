@@ -1,0 +1,71 @@
+error: use a for_each to enable iterator refinement
+  --> $DIR/for_each.rs:17:5
+   |
+LL | /     for (key, value) in a_map.iter() {
+LL | |         request = (key.clone(), value.clone());
+LL | |     }
+   | |_____^
+   |
+   = note: `-D warn-for-each` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(warn_for_each)]`
+help: try using `for_each` on the iterator
+   |
+LL ~     (a_map.iter()).into_iter().for_each(|(key, value)| {
+LL +         request = (key.clone(), value.clone());
+LL +     });
+   |
+
+error: use a for_each to enable iterator refinement
+  --> $DIR/for_each.rs:24:5
+   |
+LL | /     for x in 1..=100 {
+LL | |         println!("{x}");
+LL | |     }
+   | |_____^
+   |
+help: try using `for_each` on the iterator
+   |
+LL ~     (1..=100).into_iter().for_each(|x| {
+LL +         println!("{x}");
+LL +     });
+   |
+
+error: use a for_each to enable iterator refinement
+  --> $DIR/for_each.rs:32:5
+   |
+LL | /     for a in vec_a {
+LL | |         if a == 1 {
+LL | |             continue;
+LL | |         }
+LL | |         dbg!(a);
+LL | |     }
+   | |_____^
+   |
+help: try using `for_each` on the iterator
+   |
+LL ~     (vec_a).into_iter().for_each(|a| {
+LL +         if a == 1 {
+LL +             return;
+LL +         }
+LL +         dbg!(a);
+LL +     });
+   |
+
+error: rayon::prelude::* is not imported
+  --> $DIR/for_each.rs:2:1
+   |
+LL | use std::collections::HashMap;
+   | ^
+   |
+   = note: `-D rayon-import` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(rayon_import)]`
+help: consider adding this import
+   |
+LL + 
+LL + #[allow(unused_imports)]
+LL + use rayon::prelude::*;
+LL | use std::collections::HashMap;
+   |
+
+error: aborting due to 4 previous errors
+

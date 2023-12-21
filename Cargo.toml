@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b105fb4c39bc1a010807a6c076193cef8d93c109" }
-dylint_linting = "2.5.0"
+dylint_linting = { version = "2.5.0", features = ["constituent"] }
 if_chain = "1.0.2"
 
 [dev-dependencies]
@@ -22,9 +22,6 @@ rayon = "1.8"
 [package.metadata.rust-analyzer]
 rustc_private = true
 
-[[example]]
-name = "for_each"
-path = "ui/for_each.rs"
 
 [[example]]
 name = "rayon_present"
@@ -33,21 +30,3 @@ path = "ui/rayon_present.rs"
 [[example]]
 name = "rayon_missing"
 path = "ui/rayon_missing.rs"
-
-[[example]]
-name = "warn_filter_simple_flipped"
-path = "ui/warn_filter_simple_flipped.rs"
-
-
-[[example]]
-name = "warn_filter_simple"
-path = "ui/warn_filter_simple.rs"
-
-
-[[example]]
-name = "warn_fold_simple"
-path = "ui/warn_fold_simple.rs"
-
-[[example]]
-name = "warn_par_fold_simple"
-path = "ui/warn_par_fold_simple.rs"

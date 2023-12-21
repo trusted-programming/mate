@@ -13,7 +13,7 @@ declare_lint! {
     ///
     /// ### Example
 
-    pub WARN_FOREACH,
+    pub WARN_FOR_EACH,
     Warn,
     "use a for_each to enable iterator refinement."
 }
@@ -38,7 +38,7 @@ impl Visitor<'_> for Validator {
     }
 }
 
-declare_lint_pass!(ForEach => [WARN_FOREACH]);
+declare_lint_pass!(ForEach => [WARN_FOR_EACH]);
 
 impl EarlyLintPass for ForEach {
     fn check_expr(&mut self, cx: &EarlyContext<'_>, expr: &Expr) {
@@ -71,7 +71,7 @@ impl EarlyLintPass for ForEach {
             );
 
             cx.struct_span_lint(
-                WARN_FOREACH,
+                WARN_FOR_EACH,
                 expr.span,
                 "use a for_each to enable iterator refinement",
                 |diag| {

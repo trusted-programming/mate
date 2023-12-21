@@ -27,7 +27,12 @@ pub fn register_lints(_sess: &rustc_session::Session, lint_store: &mut rustc_lin
     lint_store.register_late_pass(|_| Box::new(lints::phase4::fold::simple::ParFoldSimple));
 }
 
+#[cfg_attr(dylint_lib = "mate", allow(rayon_import))]
 #[test]
-fn ui() {
-    dylint_testing::ui_test_examples(env!("CARGO_PKG_NAME"));
+fn for_each() {
+    dylint_testing::ui::Test::src_base(
+        env!("CARGO_PKG_NAME"),
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("ui/for_each"),
+    )
+    .run();
 }

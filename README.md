@@ -1,5 +1,14 @@
 # Mate
 
+## Lints
+
+- warn_foreach
+- warn_filter_simple
+- warn_filter_simple_flipped
+- warn_fold_simple
+- warn_par_fold_simple
+- rayon_import
+
 ## how to run
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
@@ -34,7 +43,6 @@ prerequisites: - rustup - latest version of rust stable if not run `rustup updat
    ```
 
 In the above example, the libraries are found via [workspace metadata], which is the recommended way. For additional ways of finding libraries, see [How Dylint works].
-
 
 ### VS Code integration
 
