@@ -1,6 +1,6 @@
 #![feature(rustc_private)]
-#![warn(unused_extern_crates)]
 
+extern crate rustc_driver;
 extern crate rustc_hir;
 extern crate rustc_span;
 

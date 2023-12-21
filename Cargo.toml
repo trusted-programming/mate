@@ -12,13 +12,15 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rayon_import = { path = "lints/rayon_import", features = ["rlib"] }
+for_each = { path = "lints/for_each", features = ["rlib"] }
+
 dylint_linting = { version = "2.5.0" }
 
 [package.metadata.rust-analyzer]
 rustc_private = true
 
 [workspace]
-members = ["lints/rayon_import", "utils"]
+members = ["lints/rayon_import", "lints/for_each", "utils"]
 
 [dev-dependencies]
 dylint_testing = "2.5.0"

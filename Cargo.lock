@@ -385,6 +385,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "for_each"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+]
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -620,6 +629,7 @@ version = "0.1.0"
 dependencies = [
  "dylint_linting",
  "dylint_testing",
+ "for_each",
  "rayon_import",
 ]
 
