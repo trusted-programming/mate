@@ -1,0 +1,43 @@
+error: implicit filter inside `for_each`
+  --> $DIR/main.rs:10:18
+   |
+LL |       items.iter().for_each(|&item| {
+   |  __________________^
+LL | |         if item.starts_with('a') {
+LL | |             println!("Starts with 'a': {}", item);
+LL | |         }
+LL | |     });
+   | |______^
+   |
+   = note: `-D filter-simple` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(filter_simple)]`
+help: try lifting the filter iterator
+   |
+LL ~     items.iter().filter(|&item| { let &item = (&item).as_ref();  item.starts_with('a') }).for_each(|&item| {  {
+LL +         $crate::io::_print($crate::format_args_nl!($($arg)*));
+LL ~     } });
+   |
+
+error: implicit filter inside `for_each`
+  --> $DIR/main.rs:20:20
+   |
+LL |       numbers.iter().for_each(|&num| {
+   |  ____________________^
+LL | |         if num % 2 == 0 {
+LL | |             return;
+LL | |         }
+LL | |         println!("Odd number: {}", num);
+LL | |     });
+   | |______^
+   |
+   = note: `-D filter-simple-flipped` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(filter_simple_flipped)]`
+help: try lifting the filter iterator
+   |
+LL ~     numbers.iter().filter(|&num| { let &num = (&num).as_ref();  !(num % 2 == 0) }).for_each(&num {   {
+LL +         $crate::io::_print($crate::format_args_nl!($($arg)*));
+LL ~     } });
+   |
+
+error: aborting due to 2 previous errors
+

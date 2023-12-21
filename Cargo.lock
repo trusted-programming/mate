@@ -385,6 +385,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "filter"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+ "utils",
+]
+
+[[package]]
 name = "for_each"
 version = "0.1.0"
 dependencies = [
@@ -629,6 +639,7 @@ version = "0.1.0"
 dependencies = [
  "dylint_linting",
  "dylint_testing",
+ "filter",
  "for_each",
  "rayon_import",
 ]

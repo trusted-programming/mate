@@ -1,0 +1,21 @@
+// run-rustfix
+fn main() {
+    filter_simple();
+    filter_simple_flipped();
+}
+
+fn filter_simple() {
+    let items = vec!["apple", "banana", "cherry"];
+
+    items.iter().filter(|&item| { let &item = (&item).as_ref();  item.starts_with('a') }).for_each(|&item| {  {
+        $crate::io::_print($crate::format_args_nl!($($arg)*));
+    } });
+}
+
+fn filter_simple_flipped() {
+    let numbers = vec![1, 2, 3, 4, 5];
+
+    numbers.iter().filter(|&num| { let &num = (&num).as_ref();  !(num % 2 == 0) }).for_each(&num {   {
+        $crate::io::_print($crate::format_args_nl!($($arg)*));
+    } });
+}
