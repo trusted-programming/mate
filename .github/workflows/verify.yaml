@@ -5,78 +5,49 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  os: ubuntu-latest
+  toolchain: nightly-2023-11-16
+
 jobs:
-  fmt:
+  common:
     runs-on: ubuntu-latest
-    name: stable / fmt
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Install nightly-2023-10-06
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2023-10-06
-          components: rustfmt
+          toolchain: ${{ env.toolchain }}
 
-      - name: install dylint
-        run: cargo install cargo-dylint dylint-link
+      - name: Install dylint
+        run: |
+          cargo install cargo-dylint dylint-link
 
+  fmt:
+    name: cargo fmt
+    needs: common
+    runs-on: ${{ env.os }}
+    steps:
       - name: cargo fmt --check
         run: cargo fmt --check
 
   clippy:
-    runs-on: ubuntu-latest
-    name: ${{ matrix.toolchain }} / clippy
+    name: cargo clippy
+    needs: common
     env:
       RUSTFLAGS: -D warnings
-
-    permissions:
-      contents: read
-      checks: write
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: [nightly-2023-11-16]
+    runs-on: ${{ env.os }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install ${{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          components: clippy
-
-      - name: install dylint
-        run: cargo install cargo-dylint dylint-link
-
       - name: cargo clippy
         run: cargo clippy --lib --all-features
 
   test:
-    runs-on: ubuntu-latest
-    name: ${{ matrix.toolchain }} / test
-
-    permissions:
-      contents: read
-      checks: write
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: [nightly-2023-11-16]
+    name: cargo test
+    needs: common
+    runs-on: ${{ env.os }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install ${{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-
-      - name: install dylint
-        run: cargo install cargo-dylint dylint-link
-
       - name: cargo test
-        run: cargo test --workspace 
+        run: cargo test --workspace
