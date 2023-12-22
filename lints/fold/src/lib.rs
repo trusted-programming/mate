@@ -43,10 +43,13 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
         let hir_map = cx.tcx.hir();
         // See notes in phase2/simple.rs for limitations here.
         if let ExprKind::MethodCall(seg, recv, args, _span) = &expr.kind
-            && seg.ident.name == Symbol::intern("for_each") {
+            && seg.ident.name == Symbol::intern("for_each")
+        {
             assert_eq!(args.len(), 1);
 
-            let ExprKind::Closure(for_each_cls) = &args[0].kind else { return; };
+            let ExprKind::Closure(for_each_cls) = &args[0].kind else {
+                return;
+            };
             let cls_body = hir_map.body(for_each_cls.body);
 
             // Collect a set of local definitions, the expression we wish to analyze and
@@ -58,15 +61,21 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
                 };
 
             // We should only have one statement left
-            if body_span.is_some() { return }
+            if body_span.is_some() {
+                return;
+            }
 
             // Match an assign operator expression
-            let ExprKind::AssignOp(op, lhs, rhs) = &pat_expr.kind else { return };
+            let ExprKind::AssignOp(op, lhs, rhs) = &pat_expr.kind else {
+                return;
+            };
 
             // Is the operator additive or multiplicative.
             // This effects the choice of identity.
             let mon_ty = match op.node {
-                BinOpKind::Add | BinOpKind::Sub | BinOpKind::BitXor | BinOpKind::BitOr => MonoidType::Add,
+                BinOpKind::Add | BinOpKind::Sub | BinOpKind::BitXor | BinOpKind::BitOr => {
+                    MonoidType::Add
+                }
                 BinOpKind::Mul | BinOpKind::BitAnd => MonoidType::Mul,
                 _ => return,
             };
@@ -89,27 +98,25 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
 
             let src_map = cx.sess().source_map();
             let recv_snip = src_map.span_to_snippet(recv.span).unwrap();
-            let local_defs_snip = local_defs_span.map_or(String::new(), |sp|
-                src_map.span_to_snippet(sp).unwrap());
-            let pat_span = cls_body.params[0].span.to(cls_body.params[cls_body.params.len() - 1].span);
+            let local_defs_snip =
+                local_defs_span.map_or(String::new(), |sp| src_map.span_to_snippet(sp).unwrap());
+            let pat_span = cls_body.params[0]
+                .span
+                .to(cls_body.params[cls_body.params.len() - 1].span);
             let pat_snip = src_map.span_to_snippet(pat_span).unwrap();
             let rhs_snip = src_map.span_to_snippet(rhs.span).unwrap();
             let op_snip = src_map.span_to_snippet(op.span).unwrap();
             let lhs_snip = src_map.span_to_snippet(lhs.span).unwrap();
             let suggestion = format!("{lhs_snip} {op_snip} {recv_snip}.map(|{pat_snip}| {local_defs_snip} {rhs_snip}).fold({id_snip}, |mut {lhs_snip}, v| {{ {lhs_snip} {op_snip} v; {lhs_snip} }})");
 
-            cx.struct_span_lint(
-                FOLD_SIMPLE,
-                expr.span,
-                "implicit fold",
-                |diag| {
-                    diag.span_suggestion(
-                        expr.span,
-                        "try using `fold` instead",
-                        suggestion,
-                        Applicability::MachineApplicable)
-                },
-            );
+            cx.struct_span_lint(FOLD_SIMPLE, expr.span, "implicit fold", |diag| {
+                diag.span_suggestion(
+                    expr.span,
+                    "try using `fold` instead",
+                    suggestion,
+                    Applicability::MachineApplicable,
+                )
+            });
         }
     }
 }

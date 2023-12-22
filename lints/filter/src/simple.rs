@@ -16,14 +16,17 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
         // TODO: extract to helper function
         let hir_map = cx.tcx.hir();
         if let ExprKind::MethodCall(seg, _recv, args, span) = &expr.kind
-            && seg.ident.name == Symbol::intern("for_each") {
+            && seg.ident.name == Symbol::intern("for_each")
+        {
             // A trait check is required here to make sure we are calling
             // the Iterator::for_each method instead of some other for_each method.
             // For now we just check argument count.
             assert_eq!(args.len(), 1);
 
             // Extract the for_each closure.
-            let ExprKind::Closure(for_each_cls) = &args[0].kind else { return; };
+            let ExprKind::Closure(for_each_cls) = &args[0].kind else {
+                return;
+            };
             let cls_body = hir_map.body(for_each_cls.body);
 
             // Collect a set of local definitions, the expression we wish to analyze and
@@ -35,7 +38,9 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
                 };
 
             // We should only have one statement left
-            if body_span.is_some() { return }
+            if body_span.is_some() {
+                return;
+            }
 
             // Check for a single branched if.
             let ExprKind::If(cond, then, None) = &pat_expr.kind else {
