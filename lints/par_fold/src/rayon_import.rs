@@ -5,35 +5,42 @@ use rustc_span::Span;
 
 declare_lint! {
     /// ### What it does
+    /// Checks if `rayon::prelude::*` is imported in the project.
     ///
     /// ### Why is this bad?
+    /// Not importing `rayon::prelude::*` can lead to missed opportunities for
+    /// parallelization and performance optimization when using Rayon.
     ///
     /// ### Known problems
+    /// This lint does not check if Rayon is actually used, so it might suggest
+    /// imports that are unnecessary.
     ///
     /// ### Example
+    /// ```
+    /// use rayon::prelude::*;
+    /// ```
 
     pub RAYON_IMPORT,
     Warn,
     "check if rayon prelude is imported."
 }
-// TODO: add check for cargo.toml contains rayon
 
 declare_lint_pass!(RayonImport => [RAYON_IMPORT]);
+
 impl LateLintPass<'_> for RayonImport {
     fn check_crate(&mut self, cx: &LateContext<'_>) {
         let mut found_rayon_prelude = false;
 
         for item_id in cx.tcx.hir().items() {
-            let item = cx.tcx.hir().item(item_id);
-            if let ItemKind::Use(path, UseKind::Glob) = &item.kind {
-                if path.segments.len() == 2 {
-                    let first_segment = path.segments[0].ident.name.as_str();
-                    let second_segment = path.segments[1].ident.name.as_str();
-
-                    if first_segment == "rayon" && second_segment == "prelude" {
-                        found_rayon_prelude = true;
-                        break;
-                    }
+            if let ItemKind::Use(path, UseKind::Glob) = &cx.tcx.hir().item(item_id).kind {
+                if path
+                    .segments
+                    .iter()
+                    .map(|seg| seg.ident.name.as_str())
+                    .eq(["rayon", "prelude"])
+                {
+                    found_rayon_prelude = true;
+                    break;
                 }
             }
         }
@@ -59,7 +66,6 @@ impl LateLintPass<'_> for RayonImport {
                     diag.span_suggestion(
                         suggestion_span,
                         "consider adding this import",
-                        // FIXME: would be nice to find a better solution
                         "#[allow(unused_imports)]\nuse rayon::prelude::*;\n".to_string(),
                         rustc_errors::Applicability::MachineApplicable,
                     )
