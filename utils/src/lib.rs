@@ -9,13 +9,14 @@ use rustc_span::Span;
 
 pub fn is_local_def(stmt: &Stmt) -> bool {
     match stmt.kind {
-        StmtKind::Local(_l) => true,
-        StmtKind::Expr(e) | StmtKind::Semi(e) => match e.kind {
-            ExprKind::Block(b, _) => {
-                b.stmts.iter().all(|s| is_local_def(s)) && b.expr.map_or(true, |_| false)
+        StmtKind::Local(_) => true,
+        StmtKind::Expr(e) | StmtKind::Semi(e) => {
+            if let ExprKind::Block(b, _) = e.kind {
+                b.stmts.iter().all(is_local_def) && b.expr.is_none()
+            } else {
+                false
             }
-            _ => false,
-        },
+        }
         _ => false,
     }
 }
