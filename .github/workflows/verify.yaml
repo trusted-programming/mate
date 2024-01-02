@@ -12,10 +12,6 @@ jobs:
   common:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -31,6 +27,7 @@ jobs:
     needs: common
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: cargo fmt --check
         run: cargo fmt --check
 
@@ -41,6 +38,7 @@ jobs:
       RUSTFLAGS: -D warnings
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: cargo clippy
         run: cargo clippy --lib --all-features
 
@@ -49,5 +47,6 @@ jobs:
     needs: common
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: cargo test
         run: cargo test --workspace
