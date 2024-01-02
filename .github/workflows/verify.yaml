@@ -6,7 +6,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  os: ubuntu-latest
   toolchain: nightly-2023-11-16
 
 jobs:
@@ -29,7 +28,7 @@ jobs:
   fmt:
     name: cargo fmt
     needs: common
-    runs-on: ${{ env.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: cargo fmt --check
         run: cargo fmt --check
@@ -39,7 +38,7 @@ jobs:
     needs: common
     env:
       RUSTFLAGS: -D warnings
-    runs-on: ${{ env.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: cargo clippy
         run: cargo clippy --lib --all-features
@@ -47,7 +46,7 @@ jobs:
   test:
     name: cargo test
     needs: common
-    runs-on: ${{ env.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: cargo test
         run: cargo test --workspace
