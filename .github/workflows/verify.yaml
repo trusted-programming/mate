@@ -20,6 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.toolchain }}
+          components: rustfmt, clippy
 
       - name: Install dylint
         run: |
