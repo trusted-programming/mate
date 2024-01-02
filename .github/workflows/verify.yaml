@@ -9,9 +9,12 @@ env:
   toolchain: nightly-2023-11-16
 
 jobs:
-  common:
+  fmt:
+    name: cargo fmt
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -22,31 +25,45 @@ jobs:
         run: |
           cargo install cargo-dylint dylint-link
 
-  fmt:
-    name: cargo fmt
-    needs: common
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - name: cargo fmt --check
         run: cargo fmt --check
 
   clippy:
     name: cargo clippy
-    needs: common
     env:
       RUSTFLAGS: -D warnings
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.toolchain }}
+          components: rustfmt, clippy
+
+      - name: Install dylint
+        run: |
+          cargo install cargo-dylint dylint-link
+
       - name: cargo clippy
         run: cargo clippy --lib --all-features
 
   test:
     name: cargo test
-    needs: common
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.toolchain }}
+          components: rustfmt, clippy
+
+      - name: Install dylint
+        run: |
+          cargo install cargo-dylint dylint-link
+
       - name: cargo test
         run: cargo test --workspace
