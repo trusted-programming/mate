@@ -1,10 +1,10 @@
 // run-rustfix
 fn main() {
-    filter_simple();
-    filter_simple_flipped();
+    filter_simple_macro();
+    filter_simple_flipped_macro();
 }
 
-fn filter_simple() {
+fn filter_simple_macro() {
     let items = vec!["apple", "banana", "cherry"];
 
     items.iter().for_each(|&item| {
@@ -14,7 +14,7 @@ fn filter_simple() {
     });
 }
 
-fn filter_simple_flipped() {
+fn filter_simple_flipped_macro() {
     let numbers = vec![1, 2, 3, 4, 5];
 
     numbers.iter().for_each(|&num| {

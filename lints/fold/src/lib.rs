@@ -10,6 +10,7 @@ use rustc_errors::Applicability;
 use rustc_hir::{BinOpKind, Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_span::Symbol;
+use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -97,16 +98,16 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
             };
 
             let src_map = cx.sess().source_map();
-            let recv_snip = src_map.span_to_snippet(recv.span).unwrap();
+            let recv_snip = span_to_snippet_macro(src_map, recv.span);
             let local_defs_snip =
-                local_defs_span.map_or(String::new(), |sp| src_map.span_to_snippet(sp).unwrap());
+                local_defs_span.map_or(String::new(), |sp| span_to_snippet_macro(src_map, sp));
             let pat_span = cls_body.params[0]
                 .span
                 .to(cls_body.params[cls_body.params.len() - 1].span);
-            let pat_snip = src_map.span_to_snippet(pat_span).unwrap();
-            let rhs_snip = src_map.span_to_snippet(rhs.span).unwrap();
-            let op_snip = src_map.span_to_snippet(op.span).unwrap();
-            let lhs_snip = src_map.span_to_snippet(lhs.span).unwrap();
+            let pat_snip = span_to_snippet_macro(src_map, pat_span);
+            let rhs_snip = span_to_snippet_macro(src_map, rhs.span);
+            let op_snip = span_to_snippet_macro(src_map, op.span);
+            let lhs_snip = span_to_snippet_macro(src_map, lhs.span);
             let suggestion = format!("{lhs_snip} {op_snip} {recv_snip}.map(|{pat_snip}| {local_defs_snip} {rhs_snip}).fold({id_snip}, |mut {lhs_snip}, v| {{ {lhs_snip} {op_snip} v; {lhs_snip} }})");
 
             cx.struct_span_lint(FOLD_SIMPLE, expr.span, "implicit fold", |diag| {

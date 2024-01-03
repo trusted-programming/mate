@@ -421,6 +421,7 @@ dependencies = [
  "clippy_utils",
  "dylint_linting",
  "dylint_testing",
+ "utils",
 ]
 
 [[package]]
@@ -737,6 +738,7 @@ dependencies = [
  "dylint_linting",
  "dylint_testing",
  "rayon",
+ "utils",
 ]
 
 [[package]]

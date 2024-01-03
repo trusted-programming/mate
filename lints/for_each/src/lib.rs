@@ -8,6 +8,7 @@ use rustc_ast::ast::{Expr, ExprKind};
 use rustc_ast::visit::{walk_expr, Visitor};
 use rustc_errors::Applicability;
 use rustc_lint::{EarlyContext, EarlyLintPass, LintContext};
+use utils::span_to_snippet_macro;
 
 dylint_linting::declare_early_lint! {
     /// ### What it does
@@ -66,9 +67,9 @@ impl EarlyLintPass for ForEach {
             }
 
             let src_map = cx.sess().source_map();
-            let iter_snip = src_map.span_to_snippet(iter.span).unwrap();
-            let pat_snip = src_map.span_to_snippet(pat.span).unwrap();
-            let block_snip = src_map.span_to_snippet(block.span).unwrap();
+            let iter_snip = span_to_snippet_macro(src_map, iter.span);
+            let pat_snip = span_to_snippet_macro(src_map, pat.span);
+            let block_snip = span_to_snippet_macro(src_map, block.span);
 
             // This could be handled better
             let block_snip = block_snip.replace("continue", "return");

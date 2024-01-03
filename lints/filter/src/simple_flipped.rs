@@ -3,6 +3,7 @@ use rustc_hir::{Expr, ExprKind, StmtKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::symbol::Symbol;
+use utils::span_to_snippet_macro;
 
 declare_lint! {
     pub FILTER_SIMPLE_FLIPPED,
@@ -56,7 +57,7 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
 
             let src_map = cx.sess().source_map();
             let body_snip =
-                body_span.map_or(String::new(), |sp| src_map.span_to_snippet(sp).unwrap());
+                body_span.map_or(String::new(), |sp| span_to_snippet_macro(src_map, sp));
 
             let then_snip = {
                 match then {
@@ -70,11 +71,11 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
                                 None => then_block.stmts[then_block.stmts.len() - 1].span,
                                 Some(e) => e.span,
                             };
-                            src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
+                            span_to_snippet_macro(src_map, fst_span.to(lst_span))
                         } else {
                             then_block
                                 .expr
-                                .map_or(String::new(), |e| src_map.span_to_snippet(e.span).unwrap())
+                                .map_or(String::new(), |e| span_to_snippet_macro(src_map, e.span))
                         }
                     }
                     None => String::new(),
@@ -82,18 +83,18 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
             };
 
             let local_defs_snip =
-                local_defs_span.map_or(String::new(), |sp| src_map.span_to_snippet(sp).unwrap());
+                local_defs_span.map_or(String::new(), |sp| span_to_snippet_macro(src_map, sp));
 
             let pat_snip = if !cls_body.params.is_empty() {
                 let fst_span = cls_body.params[0].span;
                 let lst_span = cls_body.params[cls_body.params.len() - 1].span;
-                src_map.span_to_snippet(fst_span.to(lst_span)).unwrap()
+                span_to_snippet_macro(src_map, fst_span.to(lst_span))
             } else {
                 String::new()
             };
 
-            let cond_snip = src_map.span_to_snippet(cond.span).unwrap();
-            let suggestion = format!("filter(|{pat_snip}| {{ let {pat_snip} = ({pat_snip}).as_ref(); {local_defs_snip} !({cond_snip}) }}).for_each({pat_snip} {{ {local_defs_snip} {then_snip} {body_snip} }})");
+            let cond_snip = span_to_snippet_macro(src_map, cond.span);
+            let suggestion = format!("filter(|{pat_snip}| {{ {local_defs_snip} !({cond_snip}) }}).for_each(|{pat_snip}| {{ {local_defs_snip} {then_snip} {body_snip} }})");
             cx.struct_span_lint(
                 FILTER_SIMPLE_FLIPPED,
                 *span,

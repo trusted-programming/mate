@@ -4,6 +4,7 @@ use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::TyKind;
 use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::{Span, Symbol};
+use utils::span_to_snippet_macro;
 
 declare_lint! {
     pub WARN_PAR_FOLD_SIMPLE,
@@ -48,7 +49,7 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldSimple {
             ir.traverse_iter_chain(recv);
 
             let src_map = cx.sess().source_map();
-            let id_snip = src_map.span_to_snippet(id_expr.span).unwrap();
+            let id_snip = span_to_snippet_macro(src_map, id_expr.span);
 
             let suggestion = "reduce".to_string();
             let suggestion2 = format!("|| {}", id_snip);

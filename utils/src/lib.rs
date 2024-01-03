@@ -5,7 +5,8 @@ extern crate rustc_hir;
 extern crate rustc_span;
 
 use rustc_hir::{Expr, ExprKind, Stmt, StmtKind};
-use rustc_span::Span;
+use rustc_span::source_map::SourceMap;
+use rustc_span::{Span, SyntaxContext};
 
 pub fn is_local_def(stmt: &Stmt) -> bool {
     match stmt.kind {
@@ -80,4 +81,19 @@ pub fn get_pat_expr_and_spans<'a>(
         expr
     };
     Ok((pat_expr, local_defs_span, body_span))
+}
+
+pub fn span_to_snippet_macro(src_map: &SourceMap, span: Span) -> String {
+    if span.ctxt() == SyntaxContext::root() {
+        // It's not a macro, proceed as usual
+        src_map.span_to_snippet(span).unwrap()
+    } else {
+        // TODO: Handle the macro case
+        // The combined_span originates from a macro expansion
+        // You might need a different approach to handle this case
+        let callsite_span = span.source_callsite();
+        src_map
+            .span_to_snippet(callsite_span)
+            .unwrap_or_else(|_| String::new())
+    }
 }
