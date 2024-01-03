@@ -30,22 +30,26 @@ dylint_linting::declare_early_lint! {
     Warn,
     "it warns that a for loop can be replaced by a for_each"
 }
-
+#[derive(Default)]
 struct Validator {
-    has_early_ret: bool,
+    is_invalid: bool,
     is_async: bool,
 }
 
 impl Visitor<'_> for Validator {
     fn visit_expr(&mut self, ex: &Expr) {
         match &ex.kind {
-            ExprKind::Try(_) | ExprKind::Ret(_) | ExprKind::Break(_, _) => {
-                self.has_early_ret = true
-            }
+            ExprKind::ForLoop(_, _, _, _)
+            | ExprKind::Loop(_, _, _)
+            | ExprKind::Closure(_)
+            | ExprKind::Try(_)
+            | ExprKind::Ret(_)
+            | ExprKind::Break(_, _) => self.is_invalid = true,
             ExprKind::Await(e, _) => {
                 self.is_async = true;
                 self.visit_expr(e)
             }
+
             _ => walk_expr(self, ex),
         }
     }
@@ -56,13 +60,10 @@ impl EarlyLintPass for ForEach {
         // Match on for loop expressions
         if let ExprKind::ForLoop(pat, iter, block, _) = &expr.kind {
             // Make sure we ignore cases that require a try_foreach
-            let mut cft = Validator {
-                has_early_ret: false,
-                is_async: false,
-            };
-            cft.visit_block(block);
-            cft.visit_expr(iter);
-            if cft.has_early_ret || cft.is_async {
+            let mut validator = Validator::default();
+            validator.visit_block(block);
+            validator.visit_expr(iter);
+            if validator.is_invalid || validator.is_async {
                 return;
             }
 

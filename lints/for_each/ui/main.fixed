@@ -4,7 +4,7 @@ fn main() {
     just_loop();
     build_request_builder();
     loop_continue();
-    // nested_loop();
+    nested_loop();
 }
 
 fn build_request_builder() -> (String, String) {
@@ -37,13 +37,13 @@ fn loop_continue() {
     });
 }
 
-// fn nested_loop() {
-//     let vec_a = vec![1, 2, 3];
-//     let vec_b = vec![1, 2, 3];
+fn nested_loop() {
+    let vec_a = vec![1, 2, 3];
+    let vec_b = vec![1, 2, 3];
 
-//     for a in vec_a {
-//         for b in &vec_b {
-//             dbg!(a, b);
-//         }
-//     }
-// }
+    for a in vec_a {
+        (&vec_b).into_iter().for_each(|b| {
+            dbg!(a, b);
+        });
+    }
+}
