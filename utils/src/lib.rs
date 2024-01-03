@@ -1,4 +1,5 @@
 #![feature(rustc_private)]
+#![allow(clippy::result_unit_err)]
 
 extern crate rustc_driver;
 extern crate rustc_hir;
