@@ -1,8 +1,8 @@
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:17:5
+  --> $DIR/main.rs:31:5
    |
-LL | /     for (key, value) in a_map.iter() {
-LL | |         request = (key.clone(), value.clone());
+LL | /     for (key, value) in headers {
+LL | |         request = request.header(key, value);
 LL | |     }
    | |_____^
    |
@@ -10,13 +10,13 @@ LL | |     }
    = help: to override `-D warnings` add `#[allow(for_each)]`
 help: try using `for_each` on the iterator
    |
-LL ~     (a_map.iter()).into_iter().for_each(|(key, value)| {
-LL +         request = (key.clone(), value.clone());
+LL ~     (headers).into_iter().for_each(|(key, value)| {
+LL +         request = request.header(key, value);
 LL +     });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:24:5
+  --> $DIR/main.rs:37:5
    |
 LL | /     for x in 1..=100 {
 LL | |         println!("{x}");
@@ -31,7 +31,7 @@ LL +     });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:32:5
+  --> $DIR/main.rs:45:5
    |
 LL | /     for a in vec_a {
 LL | |         if a == 1 {
@@ -52,7 +52,7 @@ LL +     });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:45:9
+  --> $DIR/main.rs:58:9
    |
 LL | /         for b in &vec_b {
 LL | |             dbg!(a, b);

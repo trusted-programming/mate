@@ -1,5 +1,5 @@
 // run-rustfix
-use std::collections::HashMap;
+
 fn main() {
     just_loop();
     build_request_builder();
@@ -7,17 +7,30 @@ fn main() {
     nested_loop();
 }
 
-fn build_request_builder() -> (String, String) {
-    let mut a_map = HashMap::new();
-    a_map.insert("a".to_string(), "b".to_string());
-    a_map.insert("c".to_string(), "d".to_string());
-    a_map.insert("e".to_string(), "f".to_string());
+struct MyBuilder {
+    headers: Vec<(String, String)>,
+}
 
-    let mut request = (String::new(), String::new());
-    for (key, value) in a_map.iter() {
-        request = (key.clone(), value.clone());
+impl MyBuilder {
+    fn new() -> MyBuilder {
+        MyBuilder {
+            headers: Vec::new(),
+        }
     }
-    request
+
+    fn header(mut self, key: &str, value: &str) -> MyBuilder {
+        self.headers.push((key.to_string(), value.to_string()));
+        self
+    }
+}
+
+fn build_request_builder() {
+    let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
+    let mut request = MyBuilder::new();
+
+    for (key, value) in headers {
+        request = request.header(key, value);
+    }
 }
 
 fn just_loop() {
