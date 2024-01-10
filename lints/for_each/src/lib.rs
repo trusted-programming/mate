@@ -1,19 +1,16 @@
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]
 
+extern crate rustc_ast;
 extern crate rustc_errors;
-extern crate rustc_hir;
-extern crate rustc_lint;
-extern crate rustc_span;
 
+use rustc_ast::ast::{Expr, ExprKind};
+use rustc_ast::visit::{walk_expr, Visitor};
 use rustc_errors::Applicability;
-use rustc_hir::intravisit::{walk_expr, Visitor};
-use rustc_hir::{Expr, ExprKind};
-use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_span::Symbol;
+use rustc_lint::{EarlyContext, EarlyLintPass, LintContext};
 use utils::span_to_snippet_macro;
 
-dylint_linting::declare_late_lint! {
+dylint_linting::declare_early_lint! {
     /// ### What it does
     ///
     /// ### Why is this bad?
@@ -33,7 +30,6 @@ dylint_linting::declare_late_lint! {
     Warn,
     "it warns that a for loop can be replaced by a for_each"
 }
-
 #[derive(Default)]
 struct Validator {
     is_invalid: bool,
@@ -43,30 +39,37 @@ struct Validator {
 impl Visitor<'_> for Validator {
     fn visit_expr(&mut self, ex: &Expr) {
         match &ex.kind {
-            ExprKind::Loop(_, _, _, _)
+            ExprKind::ForLoop(_, _, _, _)
+            | ExprKind::Loop(_, _, _)
             | ExprKind::Closure(_)
+            | ExprKind::Try(_)
             | ExprKind::Ret(_)
             | ExprKind::Break(_, _) => self.is_invalid = true,
+            ExprKind::Await(e, _) => {
+                self.is_async = true;
+                self.visit_expr(e)
+            }
+
             _ => walk_expr(self, ex),
         }
     }
 }
 
-impl<'tcx> LateLintPass<'tcx> for ForEach {
-    fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr) {
+impl EarlyLintPass for ForEach {
+    fn check_expr(&mut self, cx: &EarlyContext<'_>, expr: &Expr) {
         // Match on for loop expressions
-        if let ExprKind::Loop(block, label, loop_source, span) = &expr.kind {
+        if let ExprKind::ForLoop(pat, iter, block, _) = &expr.kind {
             // Make sure we ignore cases that require a try_foreach
             let mut validator = Validator::default();
             validator.visit_block(block);
-
+            validator.visit_expr(iter);
             if validator.is_invalid || validator.is_async {
                 return;
             }
 
             let src_map = cx.sess().source_map();
             let iter_snip = span_to_snippet_macro(src_map, iter.span);
-            let pat_snip = span_to_snippet_macro(src_map, loop_source.span);
+            let pat_snip = span_to_snippet_macro(src_map, pat.span);
             let block_snip = span_to_snippet_macro(src_map, block.span);
 
             // This could be handled better
