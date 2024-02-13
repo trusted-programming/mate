@@ -84,6 +84,25 @@ pub fn get_pat_expr_and_spans<'a>(
     Ok((pat_expr, local_defs_span, body_span))
 }
 
+pub fn get_penult_stmt<'a>(
+    expr: &'a Expr<'a>,
+) -> Result<&'a Stmt<'a>, ()> {
+    if let ExprKind::Block(block, _) = &expr.kind {
+        match block.stmts.len() {
+            0 => Err(()),
+            l => {
+                if l == 1 && block.expr.is_none() {
+                    Err(())
+                } else {
+                  Ok(&block.stmts[l - 1])
+                }
+            }
+        }
+    } else {
+        Err(())
+    }
+}
+
 pub fn span_to_snippet_macro(src_map: &SourceMap, span: Span) -> String {
     if span.ctxt() == SyntaxContext::root() {
         // It's not a macro, proceed as usual
