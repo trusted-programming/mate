@@ -30,6 +30,7 @@ dylint_linting::declare_early_lint! {
     Warn,
     "it warns that a for loop can be replaced by a for_each"
 }
+
 #[derive(Default)]
 struct Validator {
     is_invalid: bool,
@@ -55,6 +56,41 @@ impl Visitor<'_> for Validator {
     }
 }
 
+#[derive(Default)]
+struct IterExplorer {
+    is_iter: bool,
+}
+
+impl IterExplorer {
+    fn to_snip(&self) -> String {
+        if self.is_iter {
+            String::new()
+        } else {
+            ".into_iter()".to_string()
+        }
+    }
+}
+
+impl Visitor<'_> for IterExplorer {
+    fn visit_expr(&mut self, ex: &'_ Expr) {
+        match &ex.kind {
+            ExprKind::MethodCall(mc) => {
+                // Get method identifier
+                let mid = mc.seg.ident;
+                // Check if it's an iter method
+                // In theory, we could check all iter method names here.
+                // Perhaps a hashset could be used.
+                match mid.as_str() {
+                    "into_iter" | "iter" | "iter_mut" => self.is_iter = true,
+                    _ => {}
+                }
+                self.visit_expr(&mc.receiver);
+            }
+            _ => {}
+        }
+    }
+}
+
 impl EarlyLintPass for ForEach {
     fn check_expr(&mut self, cx: &EarlyContext<'_>, expr: &Expr) {
         // Match on for loop expressions
@@ -67,6 +103,12 @@ impl EarlyLintPass for ForEach {
                 return;
             }
 
+            // Check whether the iter is explicit
+            // NOTE: since this is a syntax only check we are bound to miss cases.
+            let mut explorer = IterExplorer::default();
+            explorer.visit_expr(iter);
+            let mc_snip = explorer.to_snip();
+
             let src_map = cx.sess().source_map();
             let iter_snip = span_to_snippet_macro(src_map, iter.span);
             let pat_snip = span_to_snippet_macro(src_map, pat.span);
@@ -75,11 +117,9 @@ impl EarlyLintPass for ForEach {
             // This could be handled better
             let block_snip = block_snip.replace("continue", "return");
 
-            // Assumes into_iter can be applied, more checks can be done to see if iter or iter_mut
-            // may apply.
             let suggestion = format!(
-                "({}).into_iter().for_each(|{}| {});",
-                iter_snip, pat_snip, block_snip
+                "({}){}.for_each(|{}| {});",
+                iter_snip, mc_snip, pat_snip, block_snip
             );
 
             cx.struct_span_lint(
