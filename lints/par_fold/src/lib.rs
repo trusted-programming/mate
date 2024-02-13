@@ -14,8 +14,8 @@ extern crate rustc_session;
 extern crate rustc_span;
 
 mod par_fold_simple;
-mod vec;
 mod rayon_import;
+mod vec;
 
 #[allow(clippy::no_mangle_with_rust_abi)]
 #[cfg_attr(not(feature = "rlib"), no_mangle)]

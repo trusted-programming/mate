@@ -84,9 +84,7 @@ pub fn get_pat_expr_and_spans<'a>(
     Ok((pat_expr, local_defs_span, body_span))
 }
 
-pub fn get_penult_stmt<'a>(
-    expr: &'a Expr<'a>,
-) -> Result<&'a Stmt<'a>, ()> {
+pub fn get_penult_stmt<'a>(expr: &'a Expr<'a>) -> Result<&'a Stmt<'a>, ()> {
     if let ExprKind::Block(block, _) = &expr.kind {
         match block.stmts.len() {
             0 => Err(()),
@@ -94,7 +92,7 @@ pub fn get_penult_stmt<'a>(
                 if l == 1 && block.expr.is_none() {
                     Err(())
                 } else {
-                  Ok(&block.stmts[l - 1])
+                    Ok(&block.stmts[l - 1])
                 }
             }
         }

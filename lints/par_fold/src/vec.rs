@@ -62,7 +62,8 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldVec {
 
             let fold_snip = format!("fold(|| Vec::new(), {cls_snip})");
             let reduce_snip = "reduce(|| Vec::new(), |mut a, b| { a.extend(b); a })";
-            let mut extend_snip = format!("{{ {id_snip}.extend({recv_snip}.{fold_snip}.{reduce_snip}); {id_snip} }}");
+            let mut extend_snip =
+                format!("{{ {id_snip}.extend({recv_snip}.{fold_snip}.{reduce_snip}); {id_snip} }}");
             extend_snip = extend_snip.replace(".iter()", ".par_iter()");
             extend_snip = extend_snip.replace(".iter_mut()", ".par_iter_mut()");
             extend_snip = extend_snip.replace(".into_iter()", ".into_par_iter()");

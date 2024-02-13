@@ -1,8 +1,8 @@
 use rustc_errors::Applicability;
 use rustc_hir::{Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_span::Symbol;
 use rustc_span::sym;
+use rustc_span::Symbol;
 use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
@@ -57,17 +57,26 @@ impl<'tcx> LateLintPass<'tcx> for FoldHashmap {
             // Type check the accumulated parameter and assign the correct identity.
             // Attempting to match 'c.insert(v);'
 
-            let ExprKind::MethodCall(iseg, irecv, _iargs, _ispan) = &pat_expr.kind else { return; };
+            let ExprKind::MethodCall(iseg, irecv, _iargs, _ispan) = &pat_expr.kind else {
+                return;
+            };
             // Vector specific insert method
             if iseg.ident.name != Symbol::intern("insert") {
                 return;
             }
             // Make sure the receiver is a variable/path to variable.
-            let ExprKind::Path(_) = irecv.kind else { return; };
+            let ExprKind::Path(_) = irecv.kind else {
+                return;
+            };
 
             // Make sure that this is the hashmap method call
-            let ty = cx.tcx.typeck(irecv.hir_id.owner.def_id).node_type(irecv.hir_id);
-            let Some(adt) = ty.ty_adt_def() else { return; };
+            let ty = cx
+                .tcx
+                .typeck(irecv.hir_id.owner.def_id)
+                .node_type(irecv.hir_id);
+            let Some(adt) = ty.ty_adt_def() else {
+                return;
+            };
             let did = adt.did();
             if !cx.tcx.is_diagnostic_item(sym::HashMap, did) {
                 return;
