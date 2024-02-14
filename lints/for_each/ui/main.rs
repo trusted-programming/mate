@@ -2,36 +2,36 @@
 
 fn main() {
     just_loop();
-    build_request_builder();
+    // build_request_builder();
     loop_continue();
     nested_loop();
 }
 
-struct MyBuilder {
-    headers: Vec<(String, String)>,
-}
+// struct MyBuilder {
+//     headers: Vec<(String, String)>,
+// }
 
-impl MyBuilder {
-    fn new() -> MyBuilder {
-        MyBuilder {
-            headers: Vec::new(),
-        }
-    }
+// impl MyBuilder {
+//     fn new() -> MyBuilder {
+//         MyBuilder {
+//             headers: Vec::new(),
+//         }
+//     }
 
-    fn header(mut self, key: &str, value: &str) -> MyBuilder {
-        self.headers.push((key.to_string(), value.to_string()));
-        self
-    }
-}
+//     fn header(mut self, key: &str, value: &str) -> MyBuilder {
+//         self.headers.push((key.to_string(), value.to_string()));
+//         self
+//     }
+// }
 
-fn build_request_builder() {
-    let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
-    let mut request = MyBuilder::new();
+// fn build_request_builder() {
+//     let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
+//     let mut request = MyBuilder::new();
 
-    for (key, value) in headers {
-        request = request.header(key, value);
-    }
-}
+//     for (key, value) in headers {
+//         request = request.header(key, value);
+//     }
+// }
 
 fn just_loop() {
     for x in 1..=100 {

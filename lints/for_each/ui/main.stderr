@@ -1,21 +1,4 @@
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:31:5
-   |
-LL | /     for (key, value) in headers {
-LL | |         request = request.header(key, value);
-LL | |     }
-   | |_____^
-   |
-   = note: `-D for-each` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(for_each)]`
-help: try using `for_each` on the iterator
-   |
-LL ~     (headers).into_iter().for_each(|(key, value)| {
-LL +         request = request.header(key, value);
-LL +     });
-   |
-
-error: use a for_each to enable iterator refinement
   --> $DIR/main.rs:37:5
    |
 LL | /     for x in 1..=100 {
@@ -23,6 +6,8 @@ LL | |         println!("{x}");
 LL | |     }
    | |_____^
    |
+   = note: `-D for-each` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(for_each)]`
 help: try using `for_each` on the iterator
    |
 LL ~     (1..=100).into_iter().for_each(|x| {
@@ -66,5 +51,5 @@ LL +             dbg!(a, b);
 LL +         });
    |
 
-error: aborting due to 4 previous errors
+error: aborting due to 3 previous errors
 

@@ -73,20 +73,17 @@ impl IterExplorer {
 
 impl Visitor<'_> for IterExplorer {
     fn visit_expr(&mut self, ex: &'_ Expr) {
-        match &ex.kind {
-            ExprKind::MethodCall(mc) => {
-                // Get method identifier
-                let mid = mc.seg.ident;
-                // Check if it's an iter method
-                // In theory, we could check all iter method names here.
-                // Perhaps a hashset could be used.
-                match mid.as_str() {
-                    "into_iter" | "iter" | "iter_mut" => self.is_iter = true,
-                    _ => {}
-                }
-                self.visit_expr(&mc.receiver);
+        if let ExprKind::MethodCall(mc) = &ex.kind {
+            // Get method identifier
+            let mid = mc.seg.ident;
+            // Check if it's an iter method
+            // In theory, we could check all iter method names here.
+            // Perhaps a hashset could be used.
+            match mid.as_str() {
+                "into_iter" | "iter" | "iter_mut" => self.is_iter = true,
+                _ => {}
             }
-            _ => {}
+            self.visit_expr(&mc.receiver);
         }
     }
 }

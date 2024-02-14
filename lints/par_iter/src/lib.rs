@@ -109,7 +109,7 @@ struct Validator<'a, 'tcx> {
 impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
         if let ExprKind::Path(ref path) = ex.kind {
-            if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(&path, ex.hir_id) {
+            if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
                 if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
                     if let Some(expr) = local.init {
                         self.is_valid &= is_type_valid(

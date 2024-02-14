@@ -1,11 +1,14 @@
+extern crate rustc_errors;
+
 use rustc_errors::Applicability;
 use rustc_hir::{Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
+use rustc_session::{declare_lint, declare_lint_pass};
 use rustc_span::sym;
 use rustc_span::Symbol;
 use utils::span_to_snippet_macro;
 
-dylint_linting::declare_late_lint! {
+declare_lint! {
     /// ### What it does
     ///
     /// ### Why is this bad?
@@ -25,6 +28,8 @@ dylint_linting::declare_late_lint! {
     Warn,
     "suggest using explicit fold"
 }
+
+declare_lint_pass!(FoldVec => [FOLD_VEC]);
 
 impl<'tcx> LateLintPass<'tcx> for FoldVec {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
