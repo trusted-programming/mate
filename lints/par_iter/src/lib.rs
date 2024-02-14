@@ -70,7 +70,13 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
                                     .tcx
                                     .get_diagnostic_item(sym::Sync)
                                     .map_or(false, |id| implements_trait(self.cx, ty, id, &[]));
-                                self.is_valid = self.is_valid && implements_send && implements_sync;
+                                let is_copy: bool = self
+                                    .cx
+                                    .tcx
+                                    .get_diagnostic_item(sym::Copy)
+                                    .map_or(false, |id| implements_trait(self.cx, ty, id, &[]));
+                                let valid = is_copy || (implements_send && implements_sync);
+                                self.is_valid = self.is_valid && valid;
                             };
                         }
                         _ => {}
