@@ -2,17 +2,19 @@
 #![warn(unused_extern_crates)]
 #![feature(let_chains)]
 
+extern crate rustc_errors;
 extern crate rustc_hir;
 extern crate rustc_span;
 
-use clippy_utils::{get_trait_def_id, sym, ty::implements_trait};
+use clippy_utils::{get_trait_def_id, ty::implements_trait};
+use rustc_errors::Applicability;
 use rustc_hir::{
     def::Res,
     intravisit::{walk_expr, Visitor},
     Expr, ExprKind, Node,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_span::source_map::SourceMap;
+use rustc_span::sym;
 use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
@@ -52,17 +54,26 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
                 let res: Res = self.cx.typeck_results().qpath_res(&path, ex.hir_id);
 
                 if let Res::Local(hir_id) = res {
-                    let ty = self.cx.tcx.type_of(hir_id);
-
-                    let hir = self.cx.tcx.hir();
-                    if let Some(node) = hir.find(hir_id) {
-                        if let rustc_hir::Node::Pat(pat) = node {
-                            let ty = self.cx.tcx.pat_ty(pat);
-                            let ty = typeck_results.pat_ty(pat);
-
-                            implements_trait(self.cx, ty, trait_id, args);
-                            self.is_valid = true;
+                    let parent = self.cx.tcx.hir().get_parent(hir_id);
+                    match parent {
+                        Node::Local(local) => {
+                            if let Some(expr) = local.init {
+                                let ty =
+                                    self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id);
+                                let implements_send = self
+                                    .cx
+                                    .tcx
+                                    .get_diagnostic_item(sym::Send)
+                                    .map_or(false, |id| implements_trait(self.cx, ty, id, &[]));
+                                let implements_sync = self
+                                    .cx
+                                    .tcx
+                                    .get_diagnostic_item(sym::Sync)
+                                    .map_or(false, |id| implements_trait(self.cx, ty, id, &[]));
+                                self.is_valid = self.is_valid && implements_send && implements_sync;
+                            };
                         }
+                        _ => {}
                     }
                 }
             }
@@ -83,6 +94,7 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
                         is_valid: true,
                     };
                     closure_visitor.visit_expr(expr);
+                    self.is_valid = self.is_valid && closure_visitor.is_valid;
                 }
             }
             _ => walk_expr(self, ex),
@@ -92,11 +104,18 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
 
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind
-            && (path.ident.name == sym!(into_iter)
-                || path.ident.name == sym!(iter)
-                || path.ident.name == sym!(iter_mut))
-        {
+        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind {
+            let ident_name = &path.ident.name.to_string()[..];
+            let src_map = cx.sess().source_map();
+            let mut suggestion = span_to_snippet_macro(src_map, expr.span);
+            match ident_name {
+                "into_iter" => suggestion = suggestion.replace("into_iter", "into_par_iter"),
+
+                "iter" => suggestion = suggestion.replace("iter", "par_iter"),
+                "iter_mut" => suggestion = suggestion.replace("iter_mut", "par_iter_mut"),
+                _ => return,
+            }
+
             let ty = cx.typeck_results().expr_ty(expr);
 
             let mut implements_par_iter = false;
@@ -119,13 +138,11 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
             if !implements_par_iter {
                 return;
             }
-            dbg!("implements_par_iter");
 
-            // @todo check that all types inside the closures are Send and sync or Copy
+            // check that all types inside the closures are Send and sync or Copy
             let mut validator = Validator { cx, is_valid: true };
-            let hir = cx.tcx.hir();
 
-            let parent_node = hir.get_parent(expr.hir_id);
+            let parent_node = cx.tcx.hir().get_parent(expr.hir_id);
             match parent_node {
                 Node::Expr(expr) => {
                     validator.visit_expr(expr);
@@ -137,7 +154,18 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 return;
             }
 
-            dbg!("the END");
+            cx.struct_span_lint(
+                PAR_ITER,
+                expr.span,
+                "found iterator that can be parallelized",
+                |diag| {
+                    diag.multipart_suggestion(
+                        "try using a parallel iterator",
+                        vec![(expr.span, suggestion)],
+                        Applicability::MachineApplicable,
+                    )
+                },
+            );
         }
     }
 }
