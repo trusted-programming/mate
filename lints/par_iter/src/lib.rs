@@ -3,19 +3,18 @@
 #![feature(let_chains)]
 
 extern crate rustc_hir;
-// extern crate rustc_middle;
 extern crate rustc_span;
 
-use clippy_utils::sym;
-use clippy_utils::ty::implements_trait;
-use rustc_hir::intravisit::{walk_expr, Visitor};
-use rustc_hir::{Expr, ExprKind};
+use clippy_utils::{get_trait_def_id, sym, ty::implements_trait};
+use rustc_hir::{
+    def::Res,
+    intravisit::{walk_expr, Visitor},
+    Expr, ExprKind, Node,
+};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_span::sym;
-// use rustc_middle::ty::TyKind;
-// use rustc_session::{declare_lint, declare_lint_pass};
-// use rustc_span::{Span, Symbol};
+use rustc_span::source_map::SourceMap;
 use utils::span_to_snippet_macro;
+
 dylint_linting::declare_late_lint! {
     /// ### What it does
     ///
@@ -37,11 +36,54 @@ dylint_linting::declare_late_lint! {
     "suggest using par iter"
 }
 
-impl Visitor<'_> for ParIter {
+struct ClosureVisitor<'a, 'tcx> {
+    cx: &'a LateContext<'tcx>,
+    is_valid: bool,
+}
+
+struct Validator<'a, 'tcx> {
+    cx: &'a LateContext<'tcx>,
+    is_valid: bool,
+}
+impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
         match ex.kind {
-            ExprKind::Closure(_c) => {
-                dbg!("got a closure");
+            ExprKind::Path(path) => {
+                let res: Res = self.cx.typeck_results().qpath_res(&path, ex.hir_id);
+
+                if let Res::Local(hir_id) = res {
+                    let ty = self.cx.tcx.type_of(hir_id);
+
+                    let hir = self.cx.tcx.hir();
+                    if let Some(node) = hir.find(hir_id) {
+                        if let rustc_hir::Node::Pat(pat) = node {
+                            let ty = self.cx.tcx.pat_ty(pat);
+                            let ty = typeck_results.pat_ty(pat);
+
+                            implements_trait(self.cx, ty, trait_id, args);
+                            self.is_valid = true;
+                        }
+                    }
+                }
+            }
+            _ => walk_expr(self, ex),
+        }
+    }
+}
+
+impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
+    fn visit_expr(&mut self, ex: &Expr) {
+        match ex.kind {
+            ExprKind::Closure(closure) => {
+                let hir = self.cx.tcx.hir();
+                let node = hir.get(closure.body.hir_id);
+                if let Node::Expr(expr) = node {
+                    let mut closure_visitor = ClosureVisitor {
+                        cx: self.cx,
+                        is_valid: true,
+                    };
+                    closure_visitor.visit_expr(expr);
+                }
             }
             _ => walk_expr(self, ex),
         }
@@ -50,34 +92,52 @@ impl Visitor<'_> for ParIter {
 
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if let ExprKind::MethodCall(path, _recv, args, span) = &expr.kind
-            && path.ident.name == sym!(into_iter)
+        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind
+            && (path.ident.name == sym!(into_iter)
+                || path.ident.name == sym!(iter)
+                || path.ident.name == sym!(iter_mut))
         {
-            let src_map = cx.sess().source_map();
             let ty = cx.typeck_results().expr_ty(expr);
 
-            // into_par_iter
-            let trait_def_id =
-                clippy_utils::get_trait_def_id(cx, &["rayon", "iter", "IntoParallelIterator"])
-                    .unwrap();
+            let mut implements_par_iter = false;
 
-            if implements_trait(cx, ty, trait_def_id, &[]) {
-                // check that iterator type is Send
-                let is_send = cx.tcx.get_diagnostic_item(sym::Send).map_or(false, |id| {
-                    implements_trait(cx, cx.typeck_results().expr_ty(expr), id, &[])
-                });
-                if !is_send {
-                    return;
+            let trait_defs = vec![
+                get_trait_def_id(cx, &["rayon", "iter", "IntoParallelIterator"]),
+                get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"]),
+                // @todo get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"]),
+                // @todo get_trait_def_id(cx, &["rayon", "iter", "IntoParallelRefIterator"]),
+                // @todo get_trait_def_id(cx, &["rayon", "iter", "IntoParallelRefMutIterator"]),
+            ];
+
+            for t in trait_defs {
+                if let Some(trait_def_id) = t {
+                    implements_par_iter =
+                        implements_par_iter || implements_trait(cx, ty, trait_def_id, &[]);
                 }
-                // @todo check that all types inside the closures are Send and sync or Copy
-
-                let id_snip = span_to_snippet_macro(src_map, expr.span);
-                dbg!(id_snip);
             }
 
-            // @todo par_iter
+            if !implements_par_iter {
+                return;
+            }
+            dbg!("implements_par_iter");
 
-            // @todo par_iter_mut
+            // @todo check that all types inside the closures are Send and sync or Copy
+            let mut validator = Validator { cx, is_valid: true };
+            let hir = cx.tcx.hir();
+
+            let parent_node = hir.get_parent(expr.hir_id);
+            match parent_node {
+                Node::Expr(expr) => {
+                    validator.visit_expr(expr);
+                }
+                // Handle other kinds of parent nodes as needed
+                _ => {}
+            }
+            if !validator.is_valid {
+                return;
+            }
+
+            dbg!("the END");
         }
     }
 }
