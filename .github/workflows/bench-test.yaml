@@ -8,7 +8,7 @@ concurrency:
 jobs:
   request_request:
     runs-on: ubuntu-latest
-    name:  request_request
+    name: request_request
     steps:
       - name: clone repo
         run: git clone https://gitee.com/openharmony/request_request.git
@@ -23,14 +23,19 @@ jobs:
       - name: add rayon
         working-directory: ./request_request
         run: |
-          cargo add rayon --package request
-          cargo add rayon --package download_server
-      
+          find . -type f -name "Cargo.toml" | while read -r file; do
+          # Check if rayon is already in the dependencies
+          if ! grep -qE "^rayon =" "$file"; then
+              # Add rayon under the [dependencies] line
+              sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+          fi
+          done
+
       - name: lint fix
         working-directory: ./request_request
         continue-on-error: true
-        run:  cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
-        
+        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+
       - name: cargo check
         working-directory: ./request_request
         run: cargo check
@@ -56,16 +61,19 @@ jobs:
       - name: add rayon
         working-directory: ./commonlibrary_rust_ylong_runtime
         run: |
-          cargo add rayon --package ylong_runtime
-          cargo add rayon --package ylong_ffrt
-          cargo add rayon --package ylong_io
-          cargo add rayon --package ylong_runtime_macros
-      
+          find . -type f -name "Cargo.toml" | while read -r file; do
+          # Check if rayon is already in the dependencies
+          if ! grep -qE "^rayon =" "$file"; then
+              # Add rayon under the [dependencies] line
+              sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+          fi
+          done
+
       - name: lint fix
         working-directory: ./commonlibrary_rust_ylong_runtime
         continue-on-error: true
-        run:  cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
-        
+        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+
       - name: cargo check
         working-directory: ./commonlibrary_rust_ylong_runtime
         run: cargo check
