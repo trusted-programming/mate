@@ -15,6 +15,7 @@ for_each = { path = "lints/for_each", features = ["rlib"] }
 filter = { path = "lints/filter", features = ["rlib"] }
 fold = { path = "lints/fold", features = ["rlib"] }
 par_fold = { path = "lints/par_fold", features = ["rlib"] }
+par_iter = { path = "lints/par_iter", features = ["rlib"] }
 
 dylint_linting = { version = "2.5.0" }
 
@@ -27,6 +28,7 @@ members = [
     "lints/filter",
     "lints/fold",
     "lints/par_fold",
+    "lints/par_iter",
     "utils",
 ]
 

@@ -664,6 +664,7 @@ dependencies = [
  "fold",
  "for_each",
  "par_fold",
+ "par_iter",
 ]
 
 [[package]]
@@ -732,6 +733,17 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "par_fold"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+ "rayon",
+ "utils",
+]
+
+[[package]]
+name = "par_iter"
 version = "0.1.0"
 dependencies = [
  "clippy_utils",
