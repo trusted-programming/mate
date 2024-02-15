@@ -2,14 +2,18 @@
 
 ## Lints
 
-- warn_foreach
-- warn_filter_simple
-- warn_filter_simple_flipped
-- warn_fold_simple
-- warn_par_fold_simple
+- for_each
+- filter_simple
+- filter_simple_flipped
+- fold_simple
+- fold_vec
+- fold_hashmap
+- par_fold_simple
+- par_fold_vec
 - rayon_import
+- par_iter
 
-## how to run
+## How to run
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
 
@@ -43,6 +47,22 @@ prerequisites: - rustup - latest version of rust stable if not run `rustup updat
    ```
 
 In the above example, the libraries are found via [workspace metadata], which is the recommended way. For additional ways of finding libraries, see [How Dylint works].
+
+## Running Tests
+
+To execute tests in a Rust project, use the following commands:
+
+```sh
+# Run all tests in the workspace
+cargo test --workspace
+
+# Run tests in a specific nested crate
+cargo test -p <nested_crate_name>
+```
+
+Replace `<nested_crate_name>` with the name of the nested crate for which you want to run the tests.
+
+For more information on testing in Rust, refer to the [Rust Book's section on testing](https://doc.rust-lang.org/book/ch11-00-testing.html).
 
 ### VS Code integration
 
