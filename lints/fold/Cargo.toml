@@ -13,10 +13,10 @@ crate-type = ["cdylib", "rlib"]
 clippy_utils = { workspace = true }
 utils = { workspace = true }
 
-dylint_linting = "2.5.0"
+dylint_linting = "2.6.1"
 
 [dev-dependencies]
-dylint_testing = "2.5.0"
+dylint_testing = "2.6.1"
 
 [package.metadata.rust-analyzer]
 rustc_private = true

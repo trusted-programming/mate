@@ -89,7 +89,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                         "try using a parallel iterator",
                         vec![(expr.span, suggestion)],
                         Applicability::MachineApplicable,
-                    )
+                    );
                 },
             );
         }
@@ -128,7 +128,8 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
 impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
         if let ExprKind::Closure(closure) = ex.kind {
-            if let Node::Expr(expr) = self.cx.tcx.hir().get(closure.body.hir_id) {
+            // @fixme check that this works
+            if let Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
                 let mut closure_visitor = ClosureVisitor {
                     cx: self.cx,
                     is_valid: true,

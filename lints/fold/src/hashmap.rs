@@ -105,7 +105,7 @@ impl<'tcx> LateLintPass<'tcx> for FoldHashmap {
                     "try using `fold` instead",
                     suggestion,
                     Applicability::MachineApplicable,
-                )
+                );
             });
         }
     }

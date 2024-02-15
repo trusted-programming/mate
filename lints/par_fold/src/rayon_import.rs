@@ -68,7 +68,7 @@ impl LateLintPass<'_> for RayonImport {
                         "consider adding this import",
                         "#[allow(unused_imports)]\nuse rayon::prelude::*;\n".to_string(),
                         rustc_errors::Applicability::MachineApplicable,
-                    )
+                    );
                 },
             );
         }

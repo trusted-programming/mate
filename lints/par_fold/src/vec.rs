@@ -74,7 +74,7 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldVec {
                     "try using a parallel fold on the iterator",
                     extend_snip,
                     Applicability::MachineApplicable,
-                )
+                );
             });
         }
     }

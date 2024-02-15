@@ -40,8 +40,14 @@ struct Validator {
 impl Visitor<'_> for Validator {
     fn visit_expr(&mut self, ex: &Expr) {
         match &ex.kind {
-            ExprKind::ForLoop(_, _, _, _)
-            | ExprKind::Loop(_, _, _)
+            ExprKind::ForLoop {
+                pat: _,
+                iter: _,
+                body: _,
+                label: _,
+                kind: _,
+            } => self.is_invalid = true,
+            ExprKind::Loop(_, _, _)
             | ExprKind::Closure(_)
             | ExprKind::Try(_)
             | ExprKind::Ret(_)
@@ -91,10 +97,17 @@ impl Visitor<'_> for IterExplorer {
 impl EarlyLintPass for ForEach {
     fn check_expr(&mut self, cx: &EarlyContext<'_>, expr: &Expr) {
         // Match on for loop expressions
-        if let ExprKind::ForLoop(pat, iter, block, _) = &expr.kind {
+        if let ExprKind::ForLoop {
+            pat,
+            iter,
+            body,
+            label: _,
+            kind: _,
+        } = &expr.kind
+        {
             // Make sure we ignore cases that require a try_foreach
             let mut validator = Validator::default();
-            validator.visit_block(block);
+            validator.visit_block(body);
             validator.visit_expr(iter);
             if validator.is_invalid || validator.is_async {
                 return;
@@ -109,14 +122,14 @@ impl EarlyLintPass for ForEach {
             let src_map = cx.sess().source_map();
             let iter_snip = span_to_snippet_macro(src_map, iter.span);
             let pat_snip = span_to_snippet_macro(src_map, pat.span);
-            let block_snip = span_to_snippet_macro(src_map, block.span);
+            let body_snip = span_to_snippet_macro(src_map, body.span);
 
             // This could be handled better
-            let block_snip = block_snip.replace("continue", "return");
+            let body_snip = body_snip.replace("continue", "return");
 
             let suggestion = format!(
                 "({}){}.for_each(|{}| {});",
-                iter_snip, mc_snip, pat_snip, block_snip
+                iter_snip, mc_snip, pat_snip, body_snip
             );
 
             cx.struct_span_lint(
@@ -129,10 +142,10 @@ impl EarlyLintPass for ForEach {
                         "try using `for_each` on the iterator",
                         suggestion,
                         Applicability::MachineApplicable,
-                    )
+                    );
                 },
             );
-        }
+        };
     }
 }
 

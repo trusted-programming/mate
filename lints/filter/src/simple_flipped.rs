@@ -105,7 +105,7 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
                         "try lifting the filter iterator",
                         suggestion,
                         Applicability::MachineApplicable,
-                    )
+                    );
                 },
             );
         }

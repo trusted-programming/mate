@@ -9,5 +9,5 @@ LL | |     });
    = note: `-D fold-simple` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(fold_simple)]`
 
-error: aborting due to previous error
+error: aborting due to 1 previous error
 

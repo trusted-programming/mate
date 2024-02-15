@@ -106,7 +106,7 @@ impl<'tcx> LateLintPass<'tcx> for FoldVec {
                     "try using `fold` instead",
                     suggestion,
                     Applicability::MachineApplicable,
-                )
+                );
             });
         }
     }

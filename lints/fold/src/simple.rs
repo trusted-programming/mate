@@ -112,7 +112,7 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
                     "try using `fold` instead",
                     suggestion,
                     Applicability::MachineApplicable,
-                )
+                );
             });
         }
     }

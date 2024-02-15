@@ -15,5 +15,5 @@ help: try using a parallel fold on the iterator
 LL |     sum += numbers.par_iter().map(|&num| num).reduce(|| 0, |mut sum, v| {
    |                    ~~~~~~~~                   ~~~~~~ ~~~~
 
-error: aborting due to previous error
+error: aborting due to 1 previous error
 

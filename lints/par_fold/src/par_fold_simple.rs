@@ -61,7 +61,7 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldSimple {
                     "try using a parallel fold on the iterator",
                     ir.suggestions,
                     Applicability::MachineApplicable,
-                )
+                );
             });
         }
     }

@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  toolchain: nightly-2023-11-16
+  toolchain: nightly-2023-12-28
 
 jobs:
   fmt:
