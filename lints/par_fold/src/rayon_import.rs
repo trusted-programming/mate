@@ -29,6 +29,22 @@ declare_lint_pass!(RayonImport => [RAYON_IMPORT]);
 
 impl LateLintPass<'_> for RayonImport {
     fn check_crate(&mut self, cx: &LateContext<'_>) {
+        // Skip linting if in build.rs file
+        if cx
+            .sess()
+            .source_map()
+            .span_to_filename(cx.tcx.hir().root_module().spans.inner_span)
+            .is_real()
+            && cx
+                .sess()
+                .source_map()
+                .span_to_filename(cx.tcx.hir().root_module().spans.inner_span)
+                .to_string()
+                .ends_with("build.rs")
+        {
+            return;
+        }
+
         let mut found_rayon_prelude = false;
 
         for item_id in cx.tcx.hir().items() {
