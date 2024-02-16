@@ -37,12 +37,14 @@ jobs:
           path: ./${{ matrix.project }}
           sparse-checkout-cone-mode: false
 
-      - name: get script
+      - name: count occurrences
         working-directory: ./${{ matrix.project }}
         run: |
           mv scripts/counters.sh counters.sh
           chmod +x counters.sh
           bash counters.sh
+          rm -rf scripts
+          rm counters.sh
 
       - name: add Cargo.toml dylint lib link
         working-directory: ./${{ matrix.project }}
@@ -67,7 +69,8 @@ jobs:
                   fi
               fi
           done
-      - name: Commit just as test
+
+      - name: Commit to clean up diff
         working-directory: ./${{ matrix.project }}
         run: |
           git config --global user.name 'test'
