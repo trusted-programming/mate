@@ -1,10 +1,6 @@
 name: bench-test
 on: [push]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,11 +40,19 @@ jobs:
         shell: bash
         run: |
           find . -type f -name "Cargo.toml" | while read -r file; do
-          # Check if rayon is already in the dependencies
-          if ! grep -qE "^rayon =" "$file"; then
-              # Add rayon under the [dependencies] line
-              sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
-          fi
+              # Check if there is a [package] section in the file
+              if grep -qE "^\[package\]" "$file"; then
+                  # Check if rayon is already in the dependencies
+                  if ! grep -qE "^rayon =" "$file"; then
+                      # Check if [dependencies] section exists
+                      if ! grep -qE "^\[dependencies\]" "$file"; then
+                          # Add [dependencies] section at the end of the file
+                          echo -e "\n[dependencies]" >> "$file"
+                      fi
+                      # Add rayon under the [dependencies] line
+                      sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+                  fi
+              fi
           done
 
       - name: lint fix
@@ -60,33 +64,6 @@ jobs:
         working-directory: ./${{ matrix.project }}
         run: cargo check
 
-      - name: git diff
+      - name: git diff for .rs files
         working-directory: ./${{ matrix.project }}
-        run: git diff
-
-      - name: par iter count
-        working-directory: ./${{ matrix.project }}
-        shell: bash
-        run: |
-          # Initialize counters
-          par_iter_count=0
-          into_par_iter_count=0
-          par_iter_mut_count=0
-
-          # Iterate over all .rs files in the current directory and subdirectories
-          find . -type f -name '*.rs' | while read -r file; do
-              # Count occurrences in the current file
-              par_iter_count_in_file=$(grep -o '\.par_iter()' "$file" | wc -l)
-              into_par_iter_count_in_file=$(grep -o 'into_par_iter()' "$file" | wc -l)
-              par_iter_mut_count_in_file=$(grep -o 'par_iter_mut()' "$file" | wc -l)
-
-              # Update total counters
-              ((par_iter_count += par_iter_count_in_file))
-              ((into_par_iter_count += into_par_iter_count_in_file))
-              ((par_iter_mut_count += par_iter_mut_count_in_file))
-          done
-
-          # Print results
-          echo ".par_iter() occurrences: $par_iter_count"
-          echo "into_par_iter() occurrences: $into_par_iter_count"
-          echo "par_iter_mut() occurrences: $par_iter_mut_count"
+        run: git diff -- '*.rs'
