@@ -4,6 +4,8 @@
 
 extern crate rustc_errors;
 extern crate rustc_hir;
+extern crate rustc_hir_typeck;
+extern crate rustc_infer;
 extern crate rustc_middle;
 extern crate rustc_span;
 
@@ -12,11 +14,17 @@ use rustc_errors::Applicability;
 use rustc_hir::{
     def::Res,
     intravisit::{walk_expr, Visitor},
-    Expr, ExprKind, Node,
+    Expr, ExprKind, HirId, Node,
 };
+
+use rustc_hir_typeck::expr_use_visitor::{Delegate, ExprUseVisitor, PlaceWithHirId};
+use rustc_infer::infer::TyCtxtInferExt;
 use rustc_lint::{LateContext, LateLintPass, LintContext};
+use rustc_middle::mir::FakeReadCause;
+use rustc_middle::ty::BorrowKind;
 use rustc_middle::ty::Ty;
 use rustc_span::{sym, Symbol};
+use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -89,7 +97,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                         "try using a parallel iterator",
                         vec![(expr.span, suggestion)],
                         Applicability::MachineApplicable,
-                    );
+                    )
                 },
             );
         }
@@ -124,24 +132,62 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
         }
     }
 }
-
+// .consume_body(closure.body)
 impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
         if let ExprKind::Closure(closure) = ex.kind {
-            // @fixme check that this works
-            if let Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
+            if let Node::Expr(expr) = self.cx.tcx.hir().get(closure.body.hir_id) {
                 let mut closure_visitor = ClosureVisitor {
                     cx: self.cx,
                     is_valid: true,
                 };
                 closure_visitor.visit_expr(expr);
+                let mut checker = MutabilityChecker {
+                    is_consume: false,
+                    is_borrow: false,
+                    is_mutable: false,
+                    is_fake_read: false,
+                    is_copy: false,
+                    is_bind: false,
+                };
+                let infcx = self.cx.tcx.infer_ctxt().build();
+                let mut expr_use_visitor = ExprUseVisitor::new(
+                    &mut checker,
+                    &infcx,
+                    closure.def_id,
+                    self.cx.param_env,
+                    self.cx.typeck_results(),
+                );
+                let src_map = self.cx.sess().source_map();
+                dbg!(span_to_snippet_macro(src_map, expr.span));
+                expr_use_visitor.walk_expr(expr);
+                dbg!(checker);
                 self.is_valid &= closure_visitor.is_valid;
+
+                // @todo use MIR to determine if the closure is Fn FnMut or FnOnce
+                // let ty = self
+                //     .cx
+                //     .tcx
+                //     .type_of(closure.def_id)
+                //     .instantiate(self.cx.tcx, &[]);
+
+                // if let TyKind::Closure(_def_id, args) = ty.kind() {
+                //     match args.as_closure().kind() {
+                //         ClosureKind::Fn => {
+                //             self.is_valid &= true;
+                //         }
+                //         ClosureKind::FnMut | ClosureKind::FnOnce => {
+                //             self.is_valid &= true;
+                //         }
+                //     }
+                // }
             }
         } else {
             walk_expr(self, ex)
         }
     }
 }
+
 fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
     let implements_send = check_trait_impl(cx, ty, sym::Send);
     let implements_sync = check_trait_impl(cx, ty, sym::Sync);
@@ -175,6 +221,51 @@ fn generate_suggestion(
         .span_to_snippet(expr.span)
         .map(|s| s.replace(method_name, replacement))
         .unwrap_or_else(|_| String::from("/* error: unable to generate suggestion */"))
+}
+
+#[derive(Debug)]
+struct MutabilityChecker {
+    is_consume: bool,
+    is_borrow: bool,
+    is_mutable: bool,
+    is_fake_read: bool,
+    is_copy: bool,
+    is_bind: bool,
+}
+
+impl<'tcx> Delegate<'tcx> for MutabilityChecker {
+    fn consume(&mut self, _place_with_id: &PlaceWithHirId<'tcx>, _diag_expr_id: HirId) {
+        self.is_consume |= true;
+    }
+
+    fn borrow(
+        &mut self,
+        _place_with_id: &PlaceWithHirId<'tcx>,
+        _diag_expr_id: HirId,
+        _bk: BorrowKind,
+    ) {
+        self.is_borrow |= true;
+    }
+
+    fn mutate(&mut self, _assignee_place: &PlaceWithHirId<'tcx>, _diag_expr_id: HirId) {
+        self.is_mutable |= true;
+    }
+
+    fn fake_read(
+        &mut self,
+        _place_with_id: &PlaceWithHirId<'tcx>,
+        _cause: FakeReadCause,
+        _diag_expr_id: HirId,
+    ) {
+        self.is_fake_read |= true;
+    }
+    // Provided methods
+    fn copy(&mut self, place_with_id: &PlaceWithHirId<'tcx>, diag_expr_id: HirId) {
+        self.is_copy |= true;
+    }
+    fn bind(&mut self, _binding_place: &PlaceWithHirId<'tcx>, diag_expr_id: HirId) {
+        self.is_bind |= true;
+    }
 }
 
 #[test]
