@@ -1,5 +1,3 @@
-extern crate rustc_errors;
-
 use rustc_errors::Applicability;
 use rustc_hir::{BinOpKind, Expr, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};

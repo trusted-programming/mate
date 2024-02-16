@@ -35,3 +35,7 @@ path = "ui/rayon_missing.rs"
 [[example]]
 name = "par_fold_simple"
 path = "ui/par_fold_simple.rs"
+
+[[example]]
+name = "build"
+path = "ui/build.rs"

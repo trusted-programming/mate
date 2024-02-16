@@ -5,7 +5,6 @@
 #[cfg(not(feature = "rlib"))]
 dylint_linting::dylint_library!();
 
-#[cfg(feature = "rlib")]
 extern crate rustc_errors;
 extern crate rustc_hir;
 extern crate rustc_lint;

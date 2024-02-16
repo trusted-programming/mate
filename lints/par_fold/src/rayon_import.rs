@@ -1,7 +1,7 @@
 use rustc_hir::{ItemKind, UseKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_session::{declare_lint, declare_lint_pass};
-use rustc_span::Span;
+use rustc_span::{FileName, FileNameDisplayPreference, Span};
 
 declare_lint! {
     /// ### What it does
@@ -30,19 +30,16 @@ declare_lint_pass!(RayonImport => [RAYON_IMPORT]);
 impl LateLintPass<'_> for RayonImport {
     fn check_crate(&mut self, cx: &LateContext<'_>) {
         // Skip linting if in build.rs file
-        if cx
+        if let FileName::Real(f) = cx
             .sess()
             .source_map()
             .span_to_filename(cx.tcx.hir().root_module().spans.inner_span)
-            .is_real()
-            && cx
-                .sess()
-                .source_map()
-                .span_to_filename(cx.tcx.hir().root_module().spans.inner_span)
-                .to_string()
-                .ends_with("build.rs")
         {
-            return;
+            if f.to_string_lossy(FileNameDisplayPreference::Short)
+                .ends_with("build.rs")
+            {
+                return;
+            }
         }
 
         let mut found_rayon_prelude = false;
