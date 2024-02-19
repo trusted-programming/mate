@@ -30,21 +30,14 @@ jobs:
           command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
 
       - name: get script
-        uses: actions/checkout@v3
-        with:
-          sparse-checkout: |
-            scripts/counters.sh
-          path: ./${{ matrix.project }}
-          sparse-checkout-cone-mode: false
+        working-directory: ./${{ matrix.project }}
+        run: curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/counters.sh
 
       - name: count occurrences
         working-directory: ./${{ matrix.project }}
         run: |
-          mv scripts/counters.sh counters.sh
           chmod +x counters.sh
           bash counters.sh
-          rm -rf scripts
-          rm counters.sh
 
       - name: add Cargo.toml dylint lib link
         working-directory: ./${{ matrix.project }}
@@ -95,26 +88,6 @@ jobs:
         working-directory: ./${{ matrix.project }}
         run: git diff -- '*.rs'
 
-      - name: par iter count
+      - name: count occurrences
         working-directory: ./${{ matrix.project }}
-        shell: bash
-        run: |
-          echo "par_iter_count=0" >> $GITHUB_ENV
-          echo "into_par_iter_count=0" >> $GITHUB_ENV
-          echo "par_iter_mut_count=0" >> $GITHUB_ENV
-
-          # Iterate over all .rs files in the current directory and subdirectories
-          find . -type f -name '*.rs' | while read -r file; do
-              echo checking $file
-              par_iter_count_in_file=$(grep -o '\.par_iter()' "$file" | wc -l)
-              into_par_iter_count_in_file=$(grep -o '\.into_par_iter()' "$file" | wc -l)
-              par_iter_mut_count_in_file=$(grep -o '\.par_iter_mut()' "$file" | wc -l)
-
-              ((par_iter_count += par_iter_count_in_file))
-              ((into_par_iter_count += into_par_iter_count_in_file))
-              ((par_iter_mut_count += par_iter_mut_count_in_file))
-          done
-
-          echo ".par_iter() occurrences: $par_iter_count"
-          echo ".into_par_iter() occurrences: $into_par_iter_count"
-          echo ".par_iter_mut() occurrences: $par_iter_mut_count"
+        run: bash counters.sh
