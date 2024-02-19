@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rs_files=($(find . -type f -name '*.rs'))
+rs_files=($(find -L . -type d -name target -prune -o -type f -name '*.rs' -print))
 echo "rs_files: ${rs_files}"
 echo "rs_files: ${rs_files[@]}"
 
