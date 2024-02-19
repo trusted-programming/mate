@@ -1,8 +1,11 @@
 #!/bin/bash
 
-rs_files=$(find . -type f -name '*.rs')
+rs_files=($(find . -type f -name '*.rs'))
+echo "rs_files: ${rs_files}"
+echo "rs_files: ${rs_files[@]}"
 
 for_loop_count=0
+echo "for_loop_count: ${for_loop_count}"
 echo "### COUNTING FOR LOOPS ###"
 for file in "${rs_files[@]}"; do
     echo "Checking: $file"
