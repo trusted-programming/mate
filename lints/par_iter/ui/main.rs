@@ -11,7 +11,7 @@ fn main() {
     warn_par_iter_simple_no_send_in_closure_body();
     move_inside_closure();
     // warn_par_iter_simple_into_parallel_ref_iterator();
-    // warn_par_iter();
+    warn_par_iter_mut_ref();
     warn_par_complex();
     warn_par_complex_no_send()
 }
@@ -89,12 +89,12 @@ fn warn_par_complex_no_send() {
     });
 }
 
-// struct LocalQueue {}
+struct LocalQueue {}
 
-// fn warn_par_iter() {
-//     let thread_num = 10;
-//     let mut locals = Vec::new();
-//     (0..thread_num).into_iter().for_each(|_| {
-//         locals.push(LocalQueue {});
-//     });
-// }
+fn warn_par_iter_mut_ref() {
+    let thread_num = 10;
+    let mut locals = Vec::new();
+    (0..thread_num).into_iter().for_each(|_| {
+        locals.push(LocalQueue {});
+    });
+}
