@@ -77,7 +77,11 @@ jobs:
       - name: lint fix
         working-directory: ./${{ matrix.project }}
         continue-on-error: true
-        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+        run: |
+          for i in {1..5}; do
+            echo "Iteration $i"
+            cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+          done
 
       - name: cargo check
         working-directory: ./${{ matrix.project }}

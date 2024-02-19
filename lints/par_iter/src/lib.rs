@@ -115,10 +115,10 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
         if let ExprKind::Path(ref path) = ex.kind {
             if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
                 if let Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
-                    if let PatKind::Binding(BindingAnnotation(_, mutability), _, _, _) = pat.kind {
-                        if let Mutability::Mut = mutability {
-                            self.is_valid = false;
-                        }
+                    if let PatKind::Binding(BindingAnnotation(_, Mutability::Mut), _, _, _) =
+                        pat.kind
+                    {
+                        self.is_valid = false;
                     }
                 }
                 if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
