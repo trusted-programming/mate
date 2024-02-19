@@ -1,0 +1,93 @@
+name: bench-test
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          [
+            commonlibrary_rust_ylong_http,
+            commonlibrary_rust_ylong_json,
+            commonlibrary_rust_ylong_runtime,
+            communication_ipc,
+            hiviewdfx_hilog,
+            hiviewdfx_hisysevent,
+            hiviewdfx_hitrace,
+            request_request,
+            systemabilitymgr_safwk,
+            systemabilitymgr_samgr,
+          ]
+    steps:
+      - name: clone repo
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_on: error
+          command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
+
+      - name: get script
+        working-directory: ./${{ matrix.project }}
+        run: curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/counters.sh
+
+      - name: count occurrences
+        working-directory: ./${{ matrix.project }}
+        run: |
+          chmod +x counters.sh
+          bash counters.sh
+
+      - name: add Cargo.toml dylint lib link
+        working-directory: ./${{ matrix.project }}
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+
+      - name: add rayon
+        working-directory: ./${{ matrix.project }}
+        shell: bash
+        run: |
+          find . -type f -name "Cargo.toml" | while read -r file; do
+              # Check if there is a [package] section in the file
+              if grep -qE "^\[package\]" "$file"; then
+                  # Check if rayon is already in the dependencies
+                  if ! grep -qE "^rayon =" "$file"; then
+                      # Check if [dependencies] section exists
+                      if ! grep -qE "^\[dependencies\]" "$file"; then
+                          # Add [dependencies] section at the end of the file
+                          echo -e "\n[dependencies]" >> "$file"
+                      fi
+                      # Add rayon under the [dependencies] line
+                      sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+                  fi
+              fi
+          done
+
+      - name: Commit to clean up diff
+        working-directory: ./${{ matrix.project }}
+        run: |
+          git config --global user.name 'test'
+          git config --global user.email 'test@test.com'
+          git add .
+          git commit -am "test"
+
+      - name: install dylint
+        run: cargo install cargo-dylint dylint-link
+
+      - name: lint fix
+        working-directory: ./${{ matrix.project }}
+        continue-on-error: true
+        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+
+      - name: cargo check
+        working-directory: ./${{ matrix.project }}
+        continue-on-error: true
+        run: cargo check
+
+      - name: git diff for .rs files
+        working-directory: ./${{ matrix.project }}
+        run: git diff -- '*.rs'
+
+      - name: count occurrences
+        working-directory: ./${{ matrix.project }}
+        run: bash counters.sh
