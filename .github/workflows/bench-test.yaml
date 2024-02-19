@@ -1,0 +1,120 @@
+name: bench-test
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          [
+            commonlibrary_rust_ylong_http,
+            commonlibrary_rust_ylong_json,
+            commonlibrary_rust_ylong_runtime,
+            communication_ipc,
+            hiviewdfx_hilog,
+            hiviewdfx_hisysevent,
+            hiviewdfx_hitrace,
+            request_request,
+            systemabilitymgr_safwk,
+            systemabilitymgr_samgr,
+          ]
+    steps:
+      - name: clone repo
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_on: error
+          command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
+
+      - name: get script
+        uses: actions/checkout@v3
+        with:
+          sparse-checkout: |
+            scripts/counters.sh
+          path: ./${{ matrix.project }}
+          sparse-checkout-cone-mode: false
+
+      - name: count occurrences
+        working-directory: ./${{ matrix.project }}
+        run: |
+          mv scripts/counters.sh counters.sh
+          chmod +x counters.sh
+          bash counters.sh
+          rm -rf scripts
+          rm counters.sh
+
+      - name: add Cargo.toml dylint lib link
+        working-directory: ./${{ matrix.project }}
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+
+      - name: add rayon
+        working-directory: ./${{ matrix.project }}
+        shell: bash
+        run: |
+          find . -type f -name "Cargo.toml" | while read -r file; do
+              # Check if there is a [package] section in the file
+              if grep -qE "^\[package\]" "$file"; then
+                  # Check if rayon is already in the dependencies
+                  if ! grep -qE "^rayon =" "$file"; then
+                      # Check if [dependencies] section exists
+                      if ! grep -qE "^\[dependencies\]" "$file"; then
+                          # Add [dependencies] section at the end of the file
+                          echo -e "\n[dependencies]" >> "$file"
+                      fi
+                      # Add rayon under the [dependencies] line
+                      sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+                  fi
+              fi
+          done
+
+      - name: Commit to clean up diff
+        working-directory: ./${{ matrix.project }}
+        run: |
+          git config --global user.name 'test'
+          git config --global user.email 'test@test.com'
+          git add .
+          git commit -am "test"
+
+      - name: install dylint
+        run: cargo install cargo-dylint dylint-link
+
+      - name: lint fix
+        working-directory: ./${{ matrix.project }}
+        continue-on-error: true
+        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+
+      - name: cargo check
+        working-directory: ./${{ matrix.project }}
+        continue-on-error: true
+        run: cargo check
+
+      - name: git diff for .rs files
+        working-directory: ./${{ matrix.project }}
+        run: git diff -- '*.rs'
+
+      - name: par iter count
+        working-directory: ./${{ matrix.project }}
+        shell: bash
+        run: |
+          echo "par_iter_count=0" >> $GITHUB_ENV
+          echo "into_par_iter_count=0" >> $GITHUB_ENV
+          echo "par_iter_mut_count=0" >> $GITHUB_ENV
+
+          # Iterate over all .rs files in the current directory and subdirectories
+          find . -type f -name '*.rs' | while read -r file; do
+              echo checking $file
+              par_iter_count_in_file=$(grep -o '\.par_iter()' "$file" | wc -l)
+              into_par_iter_count_in_file=$(grep -o '\.into_par_iter()' "$file" | wc -l)
+              par_iter_mut_count_in_file=$(grep -o '\.par_iter_mut()' "$file" | wc -l)
+
+              ((par_iter_count += par_iter_count_in_file))
+              ((into_par_iter_count += into_par_iter_count_in_file))
+              ((par_iter_mut_count += par_iter_mut_count_in_file))
+          done
+
+          echo ".par_iter() occurrences: $par_iter_count"
+          echo ".into_par_iter() occurrences: $into_par_iter_count"
+          echo ".par_iter_mut() occurrences: $par_iter_mut_count"
