@@ -33,11 +33,11 @@ jobs:
         working-directory: ./${{ matrix.project }}
         run: curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/counters.sh
 
-      - name: count occurrences
+      - name: count occurrences before
         working-directory: ./${{ matrix.project }}
         run: |
           chmod +x counters.sh
-          bash counters.sh
+          bash counters.sh before
 
       - name: add Cargo.toml dylint lib link
         working-directory: ./${{ matrix.project }}
@@ -92,6 +92,24 @@ jobs:
         working-directory: ./${{ matrix.project }}
         run: git diff -- '*.rs'
 
-      - name: count occurrences
+      - name: count occurrences after
         working-directory: ./${{ matrix.project }}
         run: bash counters.sh
+
+      - name: Calculate and print differences
+        run: |
+          for_loop_count_diff=$((for_loop_count_after - for_loop_count_before))
+          iter_count_diff=$((iter_count_after - iter_count_before))
+          iter_mut_count_diff=$((iter_mut_count_after - iter_mut_count_before))
+          into_iter_count_diff=$((into_iter_count_after - into_iter_count_before))
+          par_iter_count_diff=$((par_iter_count_after - par_iter_count_before))
+          into_par_iter_count_diff=$((into_par_iter_count_after - into_par_iter_count_before))
+          par_iter_mut_count_diff=$((par_iter_mut_count_after - par_iter_mut_count_before))
+
+          echo "For loop count difference: $for_loop_count_diff"
+          echo "Iter count difference: $iter_count_diff"
+          echo "Iter mut count difference: $iter_mut_count_diff"
+          echo "Into iter count difference: $into_iter_count_diff"
+          echo "Par iter count difference: $par_iter_count_diff"
+          echo "Into par iter count difference: $into_par_iter_count_diff"
+          echo "Par iter mut count difference: $par_iter_mut_count_diff"

@@ -1,4 +1,8 @@
 #!/bin/bash
+
+suffix=$1
+
+#!/bin/bash
 rs_files=($(find -L . -type d -name target -prune -o -type f -name '*.rs' -print))
 
 for_loop_count=0
@@ -59,3 +63,12 @@ echo ".into_par_iter() occurrences: $into_par_iter_count"
 echo ".par_iter_mut() occurrences: $par_iter_mut_count"
 echo
 echo "### ALL DONE ###"
+
+# Echo the variables with the suffix to set them in the GitHub environment
+echo "for_loop_count_${suffix}=$for_loop_count" >>$GITHUB_ENV
+echo "iter_count_${suffix}=$iter_count" >>$GITHUB_ENV
+echo "iter_mut_count_${suffix}=$iter_mut_count" >>$GITHUB_ENV
+echo "into_iter_count_${suffix}=$into_iter_count" >>$GITHUB_ENV
+echo "par_iter_count_${suffix}=$par_iter_count" >>$GITHUB_ENV
+echo "into_par_iter_count_${suffix}=$into_par_iter_count" >>$GITHUB_ENV
+echo "par_iter_mut_count_${suffix}=$par_iter_mut_count" >>$GITHUB_ENV
