@@ -654,6 +654,7 @@ dependencies = [
  "for_each",
  "par_fold",
  "par_iter",
+ "rayon_imports",
 ]
 
 [[package]]
@@ -787,6 +788,17 @@ checksum = "1465873a3dfdaa8ae7cb14b4383657caab0b3e8a0aa9ae8e04b044854c8dfce2"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
+]
+
+[[package]]
+name = "rayon_imports"
+version = "0.1.0"
+dependencies = [
+ "clippy_utils",
+ "dylint_linting",
+ "dylint_testing",
+ "rayon",
+ "utils",
 ]
 
 [[package]]

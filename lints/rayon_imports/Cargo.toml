@@ -1,5 +1,5 @@
 [package]
-name = "par_fold"
+name = "rayon_imports"
 version = "0.1.0"
 authors = ["authors go here"]
 description = "description goes here"
@@ -25,5 +25,17 @@ rustc_private = true
 rlib = ["dylint_linting/constituent"]
 
 [[example]]
-name = "par_fold_simple"
-path = "ui/par_fold_simple.rs"
+name = "main"
+path = "ui/main.rs"
+
+[[example]]
+name = "build"
+path = "ui/build.rs"
+
+[[example]]
+name = "rayon_present"
+path = "ui/rayon_present.rs"
+
+[[example]]
+name = "rayon_missing"
+path = "ui/rayon_missing.rs"

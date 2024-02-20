@@ -20,4 +20,5 @@ pub fn register_lints(sess: &rustc_session::Session, lint_store: &mut rustc_lint
 
     // INDEPENDENT LINTS
     par_iter::register_lints(sess, lint_store);
+    rayon_imports::register_lints(sess, lint_store);
 }

@@ -16,6 +16,8 @@ filter = { path = "lints/filter", features = ["rlib"] }
 fold = { path = "lints/fold", features = ["rlib"] }
 par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
+rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
+
 
 dylint_linting = { version = "2.6.1" }
 
@@ -29,6 +31,7 @@ members = [
     "lints/fold",
     "lints/par_fold",
     "lints/par_iter",
+    "lints/rayon_imports",
     "utils",
 ]
 
