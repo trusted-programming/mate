@@ -1,6 +1,6 @@
 // run-rustfix
+#![allow(unused_imports)]
 
-#[allow(unused_imports)]
 use rayon::prelude::*;
 fn main() {
     (0..100).for_each(|x| println!("{x}"));

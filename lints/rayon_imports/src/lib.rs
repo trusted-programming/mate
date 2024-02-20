@@ -13,12 +13,12 @@ extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
 
-mod rayon_import;
+mod rayon_prelude;
 
 #[allow(clippy::no_mangle_with_rust_abi)]
 #[cfg_attr(not(feature = "rlib"), no_mangle)]
 pub fn register_lints(_sess: &rustc_session::Session, lint_store: &mut rustc_lint::LintStore) {
-    lint_store.register_late_pass(|_| Box::new(rayon_import::RayonImport));
+    lint_store.register_late_pass(|_| Box::new(rayon_prelude::RayonPrelude));
 }
 
 #[test]

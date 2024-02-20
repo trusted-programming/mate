@@ -1,16 +1,14 @@
 error: rayon::prelude::* is not imported
-  --> $DIR/rayon_missing.rs:3:1
+  --> $DIR/rayon_missing.rs:4:1
    |
 LL | fn main() {
    | ^
    |
-   = note: `-D rayon-import` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(rayon_import)]`
+   = note: `-D rayon-prelude` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(rayon_prelude)]`
 help: consider adding this import
    |
-LL + #[allow(unused_imports)]
 LL + use rayon::prelude::*;
-LL | fn main() {
    |
 
 error: aborting due to 1 previous error
