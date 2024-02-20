@@ -24,9 +24,9 @@ rustc_private = true
 [features]
 rlib = ["dylint_linting/constituent"]
 
-# [[example]]
-# name = "build"
-# path = "ui/build.rs"
+[[example]]
+name = "build"
+path = "ui/build.rs"
 
 [[example]]
 name = "rayon_present"
