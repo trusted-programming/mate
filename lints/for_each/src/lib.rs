@@ -131,8 +131,7 @@ impl EarlyLintPass for ForEach {
                 "({}){}.for_each(|{}| {});",
                 iter_snip, mc_snip, pat_snip, body_snip
             );
-
-            cx.struct_span_lint(
+            cx.span_lint(
                 FOR_EACH,
                 expr.span,
                 "use a for_each to enable iterator refinement",

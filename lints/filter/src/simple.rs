@@ -81,7 +81,7 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimple {
 
             let cond_snip = span_to_snippet_macro(src_map, cond.span);
             let suggestion = format!("filter(|{pat_snip}| {{ {local_defs_snip} {cond_snip} }}).for_each(|{pat_snip}| {{ {local_defs_snip} {then_snip} }})");
-            cx.struct_span_lint(
+            cx.span_lint(
                 FILTER_SIMPLE,
                 *span,
                 "implicit filter inside `for_each`",

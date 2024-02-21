@@ -68,7 +68,7 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldVec {
             extend_snip = extend_snip.replace(".iter_mut()", ".par_iter_mut()");
             extend_snip = extend_snip.replace(".into_iter()", ".into_par_iter()");
 
-            cx.struct_span_lint(WARN_PAR_FOLD_VEC, expr.span, "sequential fold", |diag| {
+            cx.span_lint(WARN_PAR_FOLD_VEC, expr.span, "sequential fold", |diag| {
                 diag.span_suggestion(
                     expr.span,
                     "try using a parallel fold on the iterator",

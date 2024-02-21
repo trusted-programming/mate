@@ -84,7 +84,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 }
             }
 
-            cx.struct_span_lint(
+            cx.span_lint(
                 PAR_ITER,
                 expr.span,
                 "found iterator that can be parallelized",

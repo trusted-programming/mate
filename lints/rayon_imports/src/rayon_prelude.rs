@@ -59,7 +59,7 @@ impl LateLintPass<'_> for RayonPrelude {
         let import_suggestion = "#[allow(unused_imports)]\nuse rayon::prelude::*;\n".to_string();
         let inject_use_span = md.spans.inject_use_span;
         if !use_statement_visitor.has_import {
-            cx.struct_span_lint(
+            cx.span_lint(
                 RAYON_PRELUDE,
                 inject_use_span,
                 "rayon::prelude::* is not imported",

@@ -98,7 +98,7 @@ impl<'tcx> LateLintPass<'tcx> for FoldVec {
             let suggestion =
                 format!("{irecv_snip} = {recv_snip}.fold({irecv_snip}, |mut {irecv_snip}, {pat_snip}| {{ {local_defs_snip} {pat_expr_snip}; {irecv_snip} }})");
 
-            cx.struct_span_lint(FOLD_VEC, expr.span, "implicit fold", |diag| {
+            cx.span_lint(FOLD_VEC, expr.span, "implicit fold", |diag| {
                 diag.span_suggestion(
                     expr.span,
                     "try using `fold` instead",
