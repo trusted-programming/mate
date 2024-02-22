@@ -83,56 +83,39 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
     }
 }
 
-struct ClosureVisitor<'a, 'tcx> {
-    cx: &'a LateContext<'tcx>,
-    is_valid: bool,
-}
-
 struct Validator<'a, 'tcx> {
     cx: &'a LateContext<'tcx>,
     is_valid: bool,
 }
 
-impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
-    fn visit_expr(&mut self, ex: &Expr) {
-        if let ExprKind::Path(ref path) = ex.kind {
-            if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
-                if let Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
-                    if let PatKind::Binding(BindingAnnotation(_, Mutability::Mut), _, _, _) =
-                        pat.kind
-                    {
-                        self.is_valid = false;
-                    }
-                }
-                if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
-                    if let Some(expr) = local.init {
-                        self.is_valid &= is_type_valid(
-                            self.cx,
-                            self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
-                        );
-                    }
-                }
-            }
-        } else {
-            walk_expr(self, ex)
-        }
-    }
-}
-// .consume_body(closure.body)
 impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
-        if let ExprKind::Closure(closure) = ex.kind {
-            if let Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
-                let mut closure_visitor = ClosureVisitor {
-                    cx: self.cx,
-                    is_valid: true,
-                };
-                closure_visitor.visit_expr(expr);
-
-                self.is_valid &= closure_visitor.is_valid;
+        match ex.kind {
+            ExprKind::Closure(closure) => {
+                if let Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
+                    walk_expr(self, expr);
+                }
             }
-        } else {
-            walk_expr(self, ex)
+            ExprKind::Path(ref path) => {
+                if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
+                    if let Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
+                        if let PatKind::Binding(BindingAnnotation(_, Mutability::Mut), _, _, _) =
+                            pat.kind
+                        {
+                            self.is_valid = false;
+                        }
+                    }
+                    if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
+                        if let Some(expr) = local.init {
+                            self.is_valid &= is_type_valid(
+                                self.cx,
+                                self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
+                            );
+                        }
+                    }
+                }
+            }
+            _ => walk_expr(self, ex),
         }
     }
 }
