@@ -46,39 +46,32 @@ dylint_linting::declare_late_lint! {
 
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind {
-            let method_name = path.ident.name.to_string();
-            if let Some(replacement) = get_replacement_method(&method_name) {
-                let suggestion = generate_suggestion(cx, expr, &method_name, replacement);
-
-                // check that all types inside the closures are Send and sync or Copy
-                let parent_node = cx.tcx.hir().get_parent(expr.hir_id);
-                if let Node::Expr(parent_expr) = parent_node {
-                    if !check_implements_par_iter(cx, expr)
-                        && !check_implements_ref_par_iter(cx, expr)
-                    {
-                        return;
-                    };
-                    let mut validator = Validator { cx, is_valid: true };
-                    validator.visit_expr(parent_expr);
-                    if !validator.is_valid {
-                        return;
-                    }
-                }
-
-                cx.span_lint(
-                    PAR_ITER,
-                    expr.span,
-                    "found iterator that can be parallelized",
-                    |diag| {
-                        diag.multipart_suggestion(
-                            "try using a parallel iterator",
-                            vec![(expr.span, suggestion)],
-                            Applicability::MachineApplicable,
-                        );
-                    },
-                );
+        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind
+            && let method_name = path.ident.name.to_string()
+            && let Some(replacement) = get_replacement_method(&method_name)
+            && let Some(suggestion) = generate_suggestion(cx, expr, &method_name, replacement)
+            && let parent_node = cx.tcx.hir().get_parent(expr.hir_id)
+            && let Node::Expr(parent_expr) = parent_node
+            && (check_implements_par_iter(cx, expr) || check_implements_ref_par_iter(cx, expr))
+        {
+            let mut validator = Validator { cx, is_valid: true };
+            validator.visit_expr(parent_expr);
+            if !validator.is_valid {
+                return;
             }
+
+            cx.span_lint(
+                PAR_ITER,
+                expr.span,
+                "found iterator that can be parallelized",
+                |diag| {
+                    diag.multipart_suggestion(
+                        "try using a parallel iterator",
+                        vec![(expr.span, suggestion)],
+                        Applicability::MachineApplicable,
+                    );
+                },
+            );
         }
     }
 }
@@ -147,12 +140,12 @@ fn generate_suggestion(
     expr: &Expr<'_>,
     method_name: &str,
     replacement: &str,
-) -> String {
+) -> Option<String> {
     cx.sess()
         .source_map()
         .span_to_snippet(expr.span)
-        .map(|s| s.replace(method_name, replacement))
-        .unwrap_or_else(|_| String::from("/* error: unable to generate suggestion */"))
+        .map(|s| Some(s.replace(method_name, replacement)))
+        .unwrap_or_else(|_| None)
 }
 
 fn check_implements_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
