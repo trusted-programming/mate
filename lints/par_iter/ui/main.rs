@@ -1,5 +1,6 @@
 // run-rustfix
 
+use core::ascii;
 #[allow(unused_imports)]
 use rayon::prelude::*;
 use std::collections::LinkedList;
@@ -98,3 +99,12 @@ fn warn_par_iter_mut_ref() {
         locals.push(LocalQueue {});
     });
 }
+
+// fn socket_no_par() {
+//     let len = 10;
+//     let path = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+//     let name = &path[1..len];
+//     for byte in name.iter().cloned().flat_map(ascii::escape_default) {
+//         println!("{}", byte as char);
+//     }
+// }
