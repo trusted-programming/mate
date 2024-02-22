@@ -25,11 +25,11 @@ use rustc_span::{sym, Symbol};
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
-    ///
+    /// parallelize iterators using rayon
     /// ### Why is this bad?
-    ///
+    /// parrallel iters are often faster
     /// ### Known problems
-    /// Remove if none.
+    /// lots
     ///
     /// ### Example
     /// ```rust
@@ -48,38 +48,37 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
         if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind {
             let method_name = path.ident.name.to_string();
-            let replacement = get_replacement_method(&method_name);
-            if replacement.is_empty() {
-                return;
-            }
-            let suggestion = generate_suggestion(cx, expr, &method_name, replacement);
+            if let Some(replacement) = get_replacement_method(&method_name) {
+                let suggestion = generate_suggestion(cx, expr, &method_name, replacement);
 
-            if !check_implements_par_iter(cx, expr) && !check_implements_ref_par_iter(cx, expr) {
-                return;
-            };
-
-            // check that all types inside the closures are Send and sync or Copy
-            let parent_node = cx.tcx.hir().get_parent(expr.hir_id);
-            if let Node::Expr(parent_expr) = parent_node {
-                let mut validator = Validator { cx, is_valid: true };
-                validator.visit_expr(parent_expr);
-                if !validator.is_valid {
-                    return;
+                // check that all types inside the closures are Send and sync or Copy
+                let parent_node = cx.tcx.hir().get_parent(expr.hir_id);
+                if let Node::Expr(parent_expr) = parent_node {
+                    if !check_implements_par_iter(cx, expr)
+                        && !check_implements_ref_par_iter(cx, expr)
+                    {
+                        return;
+                    };
+                    let mut validator = Validator { cx, is_valid: true };
+                    validator.visit_expr(parent_expr);
+                    if !validator.is_valid {
+                        return;
+                    }
                 }
-            }
 
-            cx.span_lint(
-                PAR_ITER,
-                expr.span,
-                "found iterator that can be parallelized",
-                |diag| {
-                    diag.multipart_suggestion(
-                        "try using a parallel iterator",
-                        vec![(expr.span, suggestion)],
-                        Applicability::MachineApplicable,
-                    );
-                },
-            );
+                cx.span_lint(
+                    PAR_ITER,
+                    expr.span,
+                    "found iterator that can be parallelized",
+                    |diag| {
+                        diag.multipart_suggestion(
+                            "try using a parallel iterator",
+                            vec![(expr.span, suggestion)],
+                            Applicability::MachineApplicable,
+                        );
+                    },
+                );
+            }
         }
     }
 }
@@ -151,12 +150,12 @@ fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symb
         .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
 }
 
-fn get_replacement_method(method_name: &str) -> &str {
+fn get_replacement_method(method_name: &str) -> Option<&str> {
     match method_name {
-        "into_iter" => "into_par_iter",
-        "iter" => "par_iter",
-        "iter_mut" => "par_iter_mut",
-        _ => "",
+        "into_iter" => Some("into_par_iter"),
+        "iter" => Some("par_iter"),
+        "iter_mut" => Some("par_iter_mut"),
+        _ => None,
     }
 }
 
