@@ -2,7 +2,7 @@
 
 #[allow(unused_imports)]
 use rayon::prelude::*;
-// use std::collections::LinkedList;
+use std::collections::LinkedList;
 use std::rc::Rc;
 
 fn main() {
@@ -10,7 +10,7 @@ fn main() {
     // warn_par_iter_simple_no_send();
     warn_par_iter_simple_no_send_in_closure_body();
     move_inside_closure();
-    // warn_par_iter_simple_into_parallel_ref_iterator();
+    warn_par_iter_simple_into_parallel_ref_iterator();
     warn_par_iter_mut_ref();
     warn_par_complex();
     warn_par_complex_no_send()
@@ -36,10 +36,10 @@ fn warn_par_iter_simple_no_send_in_closure_body() {
     (0..100).into_iter().for_each(|x| list.push(Rc::new(x)));
 }
 
-// fn warn_par_iter_simple_into_parallel_ref_iterator() {
-//     let list: LinkedList<i32> = (0..100).collect();
-//     list.into_iter().for_each(|x| println!("{:?}", x));
-// }
+fn warn_par_iter_simple_into_parallel_ref_iterator() {
+    let list: LinkedList<i32> = (0..100).collect();
+    list.into_iter().for_each(|x| println!("{:?}", x));
+}
 
 struct Person {
     name: String,

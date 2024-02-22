@@ -18,7 +18,9 @@ use rustc_hir::{
     Expr, ExprKind, Node,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-
+use rustc_middle::middle::resolve_bound_vars::ObjectLifetimeDefault;
+use rustc_middle::query::Key;
+use rustc_middle::ty::GenericArg;
 use rustc_middle::ty::Ty;
 use rustc_span::{sym, Symbol};
 
@@ -54,30 +56,15 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 
             let suggestion = generate_suggestion(cx, expr, &method_name, replacement);
 
-            let ty = cx.typeck_results().expr_ty(expr);
-
-            let trait_paths = [
-                ["rayon", "iter", "IntoParallelIterator"],
-                ["rayon", "iter", "ParallelIterator"],
-                // @todo ["rayon", "iter", "IndexedParallelIterator"],
-                // @todo ["rayon", "iter", "IntoParallelRefIterator"],
-                // @todo ["rayon", "iter", "IntoParallelRefMutIterator"],
-                // Add more traits as needed
-            ];
-
-            let implements_par_iter = trait_paths
-                .iter()
-                .filter_map(|path| get_trait_def_id(cx, path))
-                .any(|trait_def_id| implements_trait(cx, ty, trait_def_id, &[]));
-
-            if !implements_par_iter {
-                return;
-            }
-
+            let implement_par_iter = check_implements_par_iter(cx, expr);
             // check that all types inside the closures are Send and sync or Copy
             let parent_node = cx.tcx.hir().get_parent(expr.hir_id);
             if let Node::Expr(parent_expr) = parent_node {
-                let mut validator = Validator { cx, is_valid: true };
+                let mut validator = Validator {
+                    cx,
+                    is_valid: true,
+                    implement_par_iter,
+                };
                 validator.visit_expr(parent_expr);
                 if !validator.is_valid {
                     return;
@@ -103,11 +90,13 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 struct ClosureVisitor<'a, 'tcx> {
     cx: &'a LateContext<'tcx>,
     is_valid: bool,
+    implement_par_iter: bool,
 }
 
 struct Validator<'a, 'tcx> {
     cx: &'a LateContext<'tcx>,
     is_valid: bool,
+    implement_par_iter: bool,
 }
 
 impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
@@ -127,7 +116,10 @@ impl<'a, 'tcx> Visitor<'_> for ClosureVisitor<'a, 'tcx> {
                             self.cx,
                             self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
                         );
-                    };
+                        if !self.implement_par_iter {
+                            self.is_valid &= check_implements_ref_par_iter(self.cx, expr);
+                        }
+                    }
                 }
             }
         } else {
@@ -143,6 +135,7 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
                 let mut closure_visitor = ClosureVisitor {
                     cx: self.cx,
                     is_valid: true,
+                    implement_par_iter: self.implement_par_iter,
                 };
                 closure_visitor.visit_expr(expr);
 
@@ -187,6 +180,98 @@ fn generate_suggestion(
         .span_to_snippet(expr.span)
         .map(|s| s.replace(method_name, replacement))
         .unwrap_or_else(|_| String::from("/* error: unable to generate suggestion */"))
+}
+
+fn check_implements_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
+    let trait_paths = [
+        ["rayon", "iter", "IntoParallelIterator"],
+        ["rayon", "iter", "ParallelIterator"],
+        // @todo ["rayon", "iter", "IndexedParallelIterator"],
+        // @todo ["rayon", "iter", "IntoParallelRefMutIterator"],
+        // Add more traits as needed
+    ];
+    let ty = cx.typeck_results().expr_ty(expr);
+    let mut args = vec![];
+
+    for path in trait_paths {
+        if let Some(trait_def_id) = get_trait_def_id(cx, &path) {
+            if path[2] == "IntoParallelRefIterator" {
+                args.push(convert_to_generic_arg(cx, ty));
+            }
+            if implements_trait(cx, ty, trait_def_id, &args) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn check_implements_ref_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
+    let path = ["rayon", "iter", "IntoParallelRefIterator"];
+
+    let ty = cx.typeck_results().expr_ty(expr);
+    let mut args = vec![];
+
+    if let Some(trait_def_id) = get_trait_def_id(cx, &path) {
+        if path[2] == "IntoParallelRefIterator" {
+            args.push(convert_to_generic_arg(cx, ty));
+        }
+        if implements_trait(cx, ty, trait_def_id, &args) {
+            return true;
+        }
+    }
+    false
+}
+
+fn convert_to_generic_arg<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'_>) -> GenericArg<'tcx> {
+    if let Some(ty_def_id) = ty.ty_def_id() {
+        let object_lifetime_default: ObjectLifetimeDefault =
+            cx.tcx.object_lifetime_default(ty_def_id);
+
+        match object_lifetime_default {
+            ObjectLifetimeDefault::Empty => {
+                // For an empty default, use an erased region as a placeholder.
+                let erased_region = cx.tcx.lifetimes.re_erased;
+                GenericArg::from(erased_region)
+            }
+            ObjectLifetimeDefault::Static => {
+                // For a static lifetime, use the 'static region.
+                let static_region = cx.tcx.lifetimes.re_static;
+                GenericArg::from(static_region)
+            }
+            ObjectLifetimeDefault::Ambiguous => {
+                // @todo For an ambiguous lifetime, use an erased region as a placeholder.
+
+                let erased_region = cx.tcx.lifetimes.re_erased;
+                GenericArg::from(erased_region)
+            }
+            ObjectLifetimeDefault::Param(_def_id) => {
+                //@todo implement this properly
+                // For a parameterized lifetime, create a region based on the DefId.
+
+                let region = cx.tcx.lifetimes.re_erased;
+
+                // let region = cx
+                //     .tcx
+                //     .mk_region(ty::RegionKind::ReEarlyBound(ty::EarlyBoundRegion {
+                //         def_id,
+                //         index: 0, // Assuming index is 0, adjust as needed.
+                //         name: tcx
+                //             .def_path(def_id)
+                //             .last()
+                //             .unwrap()
+                //             .data
+                //             .get_opt_name()
+                //             .unwrap(), // Get the name from the DefId.
+                //     }));
+                GenericArg::from(region)
+            }
+        }
+    } else {
+        let erased_region = cx.tcx.lifetimes.re_erased;
+        GenericArg::from(erased_region)
+    }
 }
 
 #[test]

@@ -10,7 +10,7 @@
 - fold_hashmap
 - par_fold_simple
 - par_fold_vec
-- rayon_import
+- rayon_prelude
 - par_iter
 
 ## How to run
