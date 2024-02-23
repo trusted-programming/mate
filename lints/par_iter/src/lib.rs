@@ -54,26 +54,27 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                     top_expr = parent_expr;
                 }
                 let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
-                if let TyKind::Tuple(_) = ty.kind() {
-                    let mut validator = Validator { cx, is_valid: true };
-                    validator.visit_expr(top_expr);
-                    if !validator.is_valid {
-                        return;
-                    }
-
-                    cx.span_lint(
-                        PAR_ITER,
-                        expr.span,
-                        "found iterator that can be parallelized",
-                        |diag| {
-                            diag.multipart_suggestion(
-                                "try using a parallel iterator",
-                                vec![(expr.span, suggestion)],
-                                Applicability::MachineApplicable,
-                            );
-                        },
-                    );
+                if let TyKind::Adt(_, _) = ty.kind() {
+                    return;
                 }
+                let mut validator = Validator { cx, is_valid: true };
+                validator.visit_expr(top_expr);
+                if !validator.is_valid {
+                    return;
+                }
+
+                cx.span_lint(
+                    PAR_ITER,
+                    expr.span,
+                    "found iterator that can be parallelized",
+                    |diag| {
+                        diag.multipart_suggestion(
+                            "try using a parallel iterator",
+                            vec![(expr.span, suggestion)],
+                            Applicability::MachineApplicable,
+                        );
+                    },
+                );
             }
         }
     }
