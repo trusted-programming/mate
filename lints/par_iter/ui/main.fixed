@@ -5,51 +5,67 @@ use core::ascii;
 use rayon::prelude::*;
 // use std::collections::LinkedList;
 use std::rc::Rc;
-
-fn main() {
-    warn_par_iter_simple();
-    // warn_par_iter_simple_no_send();
-    warn_par_iter_simple_no_send_in_closure_body();
-    move_inside_closure();
-    // warn_par_iter_simple_into_parallel_ref_iterator();
-    warn_par_iter_mut_ref();
-    warn_par_complex();
-    warn_par_complex_no_send();
-    socket_no_par();
-}
-
-fn warn_par_iter_simple() {
-    (0..100).into_par_iter().for_each(|x| println!("{:?}", x));
-}
-
-fn move_inside_closure() {
-    let y = 100;
-    (0..100)
-        .into_par_iter()
-        .for_each(|x| println!("{:?}{:?}", x, y));
-}
-
-// fn warn_par_iter_simple_no_send() {
-//     let list: Vec<Rc<i32>> = (0..100).map(Rc::new).collect();
-//     list.iter().for_each(|y| println!("{:?}", y));
-// }
-
-fn warn_par_iter_simple_no_send_in_closure_body() {
-    let mut list: Vec<Rc<i32>> = (0..100).map(Rc::new).collect();
-    (0..100).into_iter().for_each(|x| list.push(Rc::new(x)));
-}
-
-// fn warn_par_iter_simple_into_parallel_ref_iterator() {
-//     let list: LinkedList<i32> = (0..100).collect();
-//     list.into_iter().for_each(|x| println!("{:?}", x));
-// }
+struct LocalQueue {}
 
 struct Person {
     name: String,
     age: u32,
 }
 
-fn warn_par_complex() {
+fn main() {
+    simple();
+    simple_no_send();
+    simple_no_send_in_closure_body();
+    simple_move_inside_closure();
+    simple_mut_ref();
+    // simple_into_parallel_ref_iterator();
+    complex();
+    complex_no_send();
+    complex_type_no_trait();
+}
+
+// should parallelize
+fn simple() {
+    (0..100).into_par_iter().for_each(|x| println!("{:?}", x));
+}
+
+// no
+fn simple_no_send() {
+    let list: Vec<Rc<i32>> = (0..100).map(Rc::new).collect();
+    list.iter().for_each(|y| println!("{:?}", y));
+}
+
+// no
+fn simple_no_send_in_closure_body() {
+    let mut list: Vec<Rc<i32>> = (0..100).map(Rc::new).collect();
+    (0..100).into_iter().for_each(|x| list.push(Rc::new(x)));
+}
+
+// should parallelize
+fn simple_move_inside_closure() {
+    let y = 100;
+    (0..100)
+        .into_par_iter()
+        .for_each(|x| println!("{:?}{:?}", x, y));
+}
+
+// no
+fn simple_mut_ref() {
+    let thread_num = 10;
+    let mut locals = Vec::new();
+    (0..thread_num).into_iter().for_each(|_| {
+        locals.push(LocalQueue {});
+    });
+}
+
+// should parallelize
+// fn simple_into_parallel_ref_iterator() {
+//     let list: LinkedList<i32> = (0..100).collect();
+//     list.into_iter().for_each(|x| println!("{:?}", x));
+// }
+
+// should parallelize
+fn complex() {
     let vec = vec![1, 2, 3, 4, 5, 6];
     let a = 10;
     let b = 20;
@@ -72,7 +88,8 @@ fn warn_par_complex() {
     });
 }
 
-fn warn_par_complex_no_send() {
+// no
+fn complex_no_send() {
     let a = Rc::new(10);
     let b = Rc::new(20);
     let c = Rc::new("Hello");
@@ -92,17 +109,8 @@ fn warn_par_complex_no_send() {
     });
 }
 
-struct LocalQueue {}
-
-fn warn_par_iter_mut_ref() {
-    let thread_num = 10;
-    let mut locals = Vec::new();
-    (0..thread_num).into_iter().for_each(|_| {
-        locals.push(LocalQueue {});
-    });
-}
-
-fn socket_no_par() {
+// no
+fn complex_type_no_trait() {
     let len = 10;
     let path = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     let name = &path[1..len];

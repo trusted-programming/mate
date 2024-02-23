@@ -9,18 +9,13 @@ extern crate rustc_span;
 
 use clippy_utils::{get_trait_def_id, ty::implements_trait};
 use rustc_errors::Applicability;
-use rustc_hir::BindingAnnotation;
-use rustc_hir::Mutability;
-use rustc_hir::PatKind;
 use rustc_hir::{
     def::Res,
     intravisit::{walk_expr, Visitor},
-    Expr, ExprKind, Node,
+    BindingAnnotation, Expr, ExprKind, Mutability, Node, PatKind, PathSegment,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::GenericArg;
-use rustc_middle::ty::GenericArgKind;
-use rustc_middle::ty::Ty;
+use rustc_middle::ty::{GenericArg, GenericArgKind, Ty};
 use rustc_span::{sym, Symbol};
 
 dylint_linting::declare_late_lint! {
@@ -47,12 +42,9 @@ dylint_linting::declare_late_lint! {
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
         if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind
-            && let method_name = path.ident.name.to_string()
-            && let Some(replacement) = get_replacement_method(&method_name)
-            && let Some(suggestion) = generate_suggestion(cx, expr, &method_name, replacement)
-            && let parent_node = cx.tcx.hir().get_parent(expr.hir_id)
-            && let Node::Expr(parent_expr) = parent_node
             && (check_implements_par_iter(cx, expr) || check_implements_ref_par_iter(cx, expr))
+            && let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(expr.hir_id)
+            && let Some(suggestion) = generate_suggestion(cx, expr, path)
         {
             let mut validator = Validator { cx, is_valid: true };
             validator.visit_expr(parent_expr);
@@ -114,10 +106,10 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
 }
 
 fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
-    let implements_send = check_trait_impl(cx, ty, sym::Send);
-    let implements_sync = check_trait_impl(cx, ty, sym::Sync);
+    let is_send = check_trait_impl(cx, ty, sym::Send);
+    let is_sync = check_trait_impl(cx, ty, sym::Sync);
     let is_copy = check_trait_impl(cx, ty, sym::Copy);
-    is_copy || (implements_send && implements_sync)
+    is_copy || (is_send && is_sync)
 }
 
 fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
@@ -126,26 +118,28 @@ fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symb
         .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
 }
 
-fn get_replacement_method(method_name: &str) -> Option<&str> {
-    match method_name {
+fn generate_suggestion(
+    cx: &LateContext<'_>,
+    expr: &Expr<'_>,
+    path: &PathSegment,
+) -> Option<String> {
+    let method_name = &path.ident.name.to_string()[..];
+    let replacement = match method_name {
         "into_iter" => Some("into_par_iter"),
         "iter" => Some("par_iter"),
         "iter_mut" => Some("par_iter_mut"),
         _ => None,
-    }
-}
+    };
 
-fn generate_suggestion(
-    cx: &LateContext<'_>,
-    expr: &Expr<'_>,
-    method_name: &str,
-    replacement: &str,
-) -> Option<String> {
-    cx.sess()
-        .source_map()
-        .span_to_snippet(expr.span)
-        .map(|s| Some(s.replace(method_name, replacement)))
-        .unwrap_or_else(|_| None)
+    if let Some(r) = replacement {
+        cx.sess()
+            .source_map()
+            .span_to_snippet(expr.span)
+            .map(|s| Some(s.replace(method_name, r)))
+            .unwrap_or_else(|_| None)
+    } else {
+        None
+    }
 }
 
 fn check_implements_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
