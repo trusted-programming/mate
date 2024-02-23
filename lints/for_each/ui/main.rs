@@ -5,6 +5,7 @@ fn main() {
     // build_request_builder();
     loop_continue();
     nested_loop();
+    loop_break();
 }
 
 // struct MyBuilder {
@@ -45,6 +46,17 @@ fn loop_continue() {
     for a in vec_a {
         if a == 1 {
             continue;
+        }
+        dbg!(a);
+    }
+}
+
+fn loop_break() {
+    let vec_a = vec![1, 2, 3];
+
+    for a in vec_a {
+        if a == 1 {
+            break;
         }
         dbg!(a);
     }

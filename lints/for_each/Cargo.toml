@@ -22,3 +22,7 @@ rustc_private = true
 
 [features]
 rlib = ["dylint_linting/constituent"]
+
+[[example]]
+name = "main"
+path = "ui/main.rs"
