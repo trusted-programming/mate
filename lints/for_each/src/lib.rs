@@ -5,11 +5,12 @@
 extern crate rustc_errors;
 extern crate rustc_hir;
 
-use clippy_utils::higher::ForLoop;
+use clippy_utils::{higher::ForLoop, ty::is_copy};
 use rustc_errors::Applicability;
 use rustc_hir::{
+    def::Res,
     intravisit::{walk_expr, Visitor},
-    Expr, ExprKind,
+    Expr, ExprKind, HirId, Node,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use utils::span_to_snippet_macro;
@@ -47,13 +48,18 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
             let src_map = cx.sess().source_map();
 
             // Make sure we ignore cases that require a try_foreach
-            let mut validator = Validator::default();
-            validator.visit_expr(body);
+            let mut validator = Validator {
+                is_valid: true,
+                is_arg: true,
+                arg_variables: vec![],
+                cx,
+            };
             validator.visit_expr(arg);
-            if validator.is_invalid {
+            validator.is_arg = false;
+            validator.visit_expr(body);
+            if !validator.is_valid {
                 return;
             }
-
             // Check whether the iter is explicit
             // NOTE: since this is a syntax only check we are bound to miss cases.
             let mut explorer = IterExplorer::default();
@@ -119,18 +125,38 @@ impl Visitor<'_> for IterExplorer {
     }
 }
 
-#[derive(Default)]
-struct Validator {
-    is_invalid: bool,
+struct Validator<'a, 'tcx> {
+    is_valid: bool,
+    cx: &'a LateContext<'tcx>,
+    is_arg: bool,
+    arg_variables: Vec<HirId>,
 }
 
-impl Visitor<'_> for Validator {
+impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &Expr) {
         match &ex.kind {
             ExprKind::Loop(_, _, _, _)
             | ExprKind::Closure(_)
             | ExprKind::Ret(_)
-            | ExprKind::Break(_, _) => self.is_invalid = true,
+            | ExprKind::Break(_, _) => self.is_valid = false,
+            ExprKind::Path(ref path) => {
+                if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
+                    if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
+                        if self.is_arg {
+                            self.arg_variables.push(local.hir_id);
+                            return;
+                        }
+
+                        if let Some(expr) = local.init
+                            && !self.arg_variables.contains(&local.hir_id)
+                        {
+                            let ty = self.cx.typeck_results().expr_ty(expr);
+                            self.is_valid &= is_copy(self.cx, ty)
+                        }
+                    }
+                }
+            }
+
             _ => walk_expr(self, ex),
         }
     }

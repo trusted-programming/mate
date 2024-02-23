@@ -6,40 +6,44 @@ fn main() {
     loop_continue();
     nested_loop();
     loop_break();
+    build_request_builder();
 }
 
-// struct MyBuilder {
-//     headers: Vec<(String, String)>,
-// }
+struct MyBuilder {
+    headers: Vec<(String, String)>,
+}
 
-// impl MyBuilder {
-//     fn new() -> MyBuilder {
-//         MyBuilder {
-//             headers: Vec::new(),
-//         }
-//     }
+impl MyBuilder {
+    fn new() -> MyBuilder {
+        MyBuilder {
+            headers: Vec::new(),
+        }
+    }
 
-//     fn header(mut self, key: &str, value: &str) -> MyBuilder {
-//         self.headers.push((key.to_string(), value.to_string()));
-//         self
-//     }
-// }
+    fn header(mut self, key: &str, value: &str) -> MyBuilder {
+        self.headers.push((key.to_string(), value.to_string()));
+        self
+    }
+}
 
-// fn build_request_builder() {
-//     let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
-//     let mut request = MyBuilder::new();
+// no
+fn build_request_builder() {
+    let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
+    let mut request = MyBuilder::new();
 
-//     for (key, value) in headers {
-//         request = request.header(key, value);
-//     }
-// }
+    for (key, value) in headers {
+        request = request.header(key, value);
+    }
+}
 
+// for_each
 fn just_loop() {
     (1..=100).into_iter().for_each(|x| {
         println!("{x}");
     });
 }
 
+// for_each
 fn loop_continue() {
     let vec_a = vec![1, 2, 3];
 
@@ -51,6 +55,7 @@ fn loop_continue() {
     });
 }
 
+// no
 fn loop_break() {
     let vec_a = vec![1, 2, 3];
 
@@ -62,6 +67,7 @@ fn loop_break() {
     }
 }
 
+// for_each internal
 fn nested_loop() {
     let vec_a = vec![1, 2, 3];
     let vec_b = vec![1, 2, 3];
