@@ -51,5 +51,22 @@ LL +             dbg!(a, b);
 LL +         });
    |
 
-error: aborting due to 3 previous errors
+error: use a for_each to enable iterator refinement
+  --> $DIR/main.rs:85:5
+   |
+LL | /     for _ in 0..some_num.len() {
+LL | |         let (_, upload_size) = (true, 99);
+LL | |         file_total_size += upload_size;
+LL | |     }
+   | |_____^
+   |
+help: try using `for_each` on the iterator
+   |
+LL ~     (0..some_num.len()).into_iter().for_each(|_| {
+LL +         let (_, upload_size) = (true, 99);
+LL +         file_total_size += upload_size;
+LL +     });
+   |
+
+error: aborting due to 4 previous errors
 

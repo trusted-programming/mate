@@ -1,12 +1,12 @@
 // run-rustfix
 
 fn main() {
+    build_request_builder();
     just_loop();
-    // build_request_builder();
     loop_continue();
     nested_loop();
     loop_break();
-    build_request_builder();
+    get_upload_file_total_size();
 }
 
 struct MyBuilder {
@@ -77,4 +77,14 @@ fn nested_loop() {
             dbg!(a, b);
         });
     }
+}
+
+fn get_upload_file_total_size() -> u64 {
+    let some_num = vec![0; 10];
+    let mut file_total_size = 0;
+    (0..some_num.len()).into_iter().for_each(|_| {
+        let (_, upload_size) = (true, 99);
+        file_total_size += upload_size;
+    });
+    file_total_size
 }
