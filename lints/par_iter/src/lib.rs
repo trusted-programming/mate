@@ -15,9 +15,8 @@ use rustc_hir::{
     BindingAnnotation, Expr, ExprKind, Mutability, Node, PatKind, PathSegment,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::{GenericArg, GenericArgKind, Ty};
+use rustc_middle::ty::{ty_kind::TyKind, GenericArg, GenericArgKind, Ty};
 use rustc_span::{sym, Symbol};
-// use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -54,29 +53,27 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 while let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(top_expr.hir_id) {
                     top_expr = parent_expr;
                 }
-                // let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+                let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+                if let TyKind::Tuple(_) = ty.kind() {
+                    let mut validator = Validator { cx, is_valid: true };
+                    validator.visit_expr(top_expr);
+                    if !validator.is_valid {
+                        return;
+                    }
 
-                // dbg!(span_to_snippet_macro(cx.sess().source_map(), top_expr.span));
-                // dbg!(ty);
-
-                let mut validator = Validator { cx, is_valid: true };
-                validator.visit_expr(top_expr);
-                if !validator.is_valid {
-                    return;
+                    cx.span_lint(
+                        PAR_ITER,
+                        expr.span,
+                        "found iterator that can be parallelized",
+                        |diag| {
+                            diag.multipart_suggestion(
+                                "try using a parallel iterator",
+                                vec![(expr.span, suggestion)],
+                                Applicability::MachineApplicable,
+                            );
+                        },
+                    );
                 }
-
-                cx.span_lint(
-                    PAR_ITER,
-                    expr.span,
-                    "found iterator that can be parallelized",
-                    |diag| {
-                        diag.multipart_suggestion(
-                            "try using a parallel iterator",
-                            vec![(expr.span, suggestion)],
-                            Applicability::MachineApplicable,
-                        );
-                    },
-                );
             }
         }
     }

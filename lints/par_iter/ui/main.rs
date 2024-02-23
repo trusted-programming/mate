@@ -4,7 +4,9 @@ use core::ascii;
 #[allow(unused_imports)]
 use rayon::prelude::*;
 use std::collections::LinkedList;
+use std::ops::Range;
 use std::rc::Rc;
+
 struct LocalQueue {}
 
 struct Person {
@@ -117,4 +119,9 @@ fn complex_type_no_trait() {
     for byte in name.iter().cloned().flat_map(ascii::escape_default) {
         println!("{}", byte as char);
     }
+}
+
+// no
+pub fn iter_mut() -> Range<usize> {
+    (0..100).into_iter()
 }
