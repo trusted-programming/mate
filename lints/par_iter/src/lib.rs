@@ -17,6 +17,7 @@ use rustc_hir::{
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{GenericArg, GenericArgKind, Ty};
 use rustc_span::{sym, Symbol};
+// use utils::span_to_snippet_macro;
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -41,29 +42,42 @@ dylint_linting::declare_late_lint! {
 
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if let ExprKind::MethodCall(path, _recv, _args, _span) = &expr.kind
-            && (check_implements_par_iter(cx, expr) || check_implements_ref_par_iter(cx, expr))
-            && let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(expr.hir_id)
+        if let ExprKind::MethodCall(path, recv, _args, _span) = &expr.kind
             && let Some(suggestion) = generate_suggestion(cx, expr, path)
         {
-            let mut validator = Validator { cx, is_valid: true };
-            validator.visit_expr(parent_expr);
-            if !validator.is_valid {
-                return;
-            }
+            let ty = cx.typeck_results().expr_ty(recv);
 
-            cx.span_lint(
-                PAR_ITER,
-                expr.span,
-                "found iterator that can be parallelized",
-                |diag| {
-                    diag.multipart_suggestion(
-                        "try using a parallel iterator",
-                        vec![(expr.span, suggestion)],
-                        Applicability::MachineApplicable,
-                    );
-                },
-            );
+            if (check_implements_par_iter(cx, recv) || check_implements_ref_par_iter(cx, recv))
+                && is_type_valid(cx, ty)
+            {
+                let mut top_expr = *recv;
+                while let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(top_expr.hir_id) {
+                    top_expr = parent_expr;
+                }
+                // let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+
+                // dbg!(span_to_snippet_macro(cx.sess().source_map(), top_expr.span));
+                // dbg!(ty);
+
+                let mut validator = Validator { cx, is_valid: true };
+                validator.visit_expr(top_expr);
+                if !validator.is_valid {
+                    return;
+                }
+
+                cx.span_lint(
+                    PAR_ITER,
+                    expr.span,
+                    "found iterator that can be parallelized",
+                    |diag| {
+                        diag.multipart_suggestion(
+                            "try using a parallel iterator",
+                            vec![(expr.span, suggestion)],
+                            Applicability::MachineApplicable,
+                        );
+                    },
+                );
+            }
         }
     }
 }

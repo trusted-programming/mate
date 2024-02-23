@@ -21,10 +21,16 @@ LL +         .into_par_iter()
    |
 
 error: found iterator that can be parallelized
+  --> $DIR/main.rs:64:5
+   |
+LL |     list.into_iter().for_each(|x| println!("{:?}", x));
+   |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
+
+error: found iterator that can be parallelized
   --> $DIR/main.rs:80:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
-error: aborting due to 3 previous errors
+error: aborting due to 4 previous errors
 

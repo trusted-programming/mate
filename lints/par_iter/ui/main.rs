@@ -3,7 +3,7 @@
 use core::ascii;
 #[allow(unused_imports)]
 use rayon::prelude::*;
-// use std::collections::LinkedList;
+use std::collections::LinkedList;
 use std::rc::Rc;
 struct LocalQueue {}
 
@@ -18,7 +18,7 @@ fn main() {
     simple_no_send_in_closure_body();
     simple_move_inside_closure();
     simple_mut_ref();
-    // simple_into_parallel_ref_iterator();
+    simple_into_parallel_ref_iterator();
     complex();
     complex_no_send();
     complex_type_no_trait();
@@ -59,10 +59,10 @@ fn simple_mut_ref() {
 }
 
 // should parallelize
-// fn simple_into_parallel_ref_iterator() {
-//     let list: LinkedList<i32> = (0..100).collect();
-//     list.into_iter().for_each(|x| println!("{:?}", x));
-// }
+fn simple_into_parallel_ref_iterator() {
+    let list: LinkedList<i32> = (0..100).collect();
+    list.into_iter().for_each(|x| println!("{:?}", x));
+}
 
 // should parallelize
 fn complex() {
