@@ -7,7 +7,10 @@ extern crate rustc_hir;
 
 use clippy_utils::higher::ForLoop;
 use rustc_errors::Applicability;
-use rustc_hir::{intravisit::Visitor, Expr, ExprKind};
+use rustc_hir::{
+    intravisit::{walk_expr, Visitor},
+    Expr, ExprKind,
+};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use utils::span_to_snippet_macro;
 dylint_linting::declare_late_lint! {
@@ -43,6 +46,14 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
         {
             let src_map = cx.sess().source_map();
 
+            // Make sure we ignore cases that require a try_foreach
+            let mut validator = Validator::default();
+            validator.visit_expr(body);
+            validator.visit_expr(arg);
+            if validator.is_invalid {
+                return;
+            }
+
             // Check whether the iter is explicit
             // NOTE: since this is a syntax only check we are bound to miss cases.
             let mut explorer = IterExplorer::default();
@@ -58,17 +69,6 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
                 iter_snip, mc_snip, pat_snip, body_snip
             )
             .replace("continue;", "return;");
-
-            // @todo improve this
-            // if it contains break we cant convert
-            if span_to_snippet_macro(src_map, body.span).contains("break")
-                || span_to_snippet_macro(src_map, body.span).contains("for ")
-                || span_to_snippet_macro(src_map, body.span).contains(".iter()")
-                || span_to_snippet_macro(src_map, body.span).contains(".into_iter()")
-                || span_to_snippet_macro(src_map, body.span).contains(".iter_mut()")
-            {
-                return;
-            }
 
             cx.span_lint(
                 FOR_EACH,
@@ -115,6 +115,23 @@ impl Visitor<'_> for IterExplorer {
                 _ => {}
             }
             self.visit_expr(expr);
+        }
+    }
+}
+
+#[derive(Default)]
+struct Validator {
+    is_invalid: bool,
+}
+
+impl Visitor<'_> for Validator {
+    fn visit_expr(&mut self, ex: &Expr) {
+        match &ex.kind {
+            ExprKind::Loop(_, _, _, _)
+            | ExprKind::Closure(_)
+            | ExprKind::Ret(_)
+            | ExprKind::Break(_, _) => self.is_invalid = true,
+            _ => walk_expr(self, ex),
         }
     }
 }
