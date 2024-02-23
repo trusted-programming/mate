@@ -102,7 +102,7 @@ impl<'tcx> LateLintPass<'tcx> for FoldSimple {
             let rhs_snip = span_to_snippet_macro(src_map, rhs.span);
             let op_snip = span_to_snippet_macro(src_map, op.span);
             let lhs_snip = span_to_snippet_macro(src_map, lhs.span);
-            let suggestion = format!("{lhs_snip} {op_snip} {recv_snip}.map(|{pat_snip}| {local_defs_snip} {rhs_snip}).fold({id_snip}, |mut {lhs_snip}, v| {{ {lhs_snip} {op_snip} v; {lhs_snip} }})");
+            let suggestion = format!("{lhs_snip} {op_snip} {recv_snip}.map(|{pat_snip}| {{{local_defs_snip} {rhs_snip}}}).fold({id_snip}, |mut {lhs_snip}, v| {{ {lhs_snip} {op_snip} v; {lhs_snip} }})");
 
             cx.span_lint(FOLD_SIMPLE, expr.span, "implicit fold", |diag| {
                 diag.span_suggestion(

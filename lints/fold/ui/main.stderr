@@ -1,13 +1,22 @@
 error: implicit fold
-  --> $DIR/main.rs:10:5
+  --> $DIR/main.rs:11:5
    |
 LL | /     numbers.iter().for_each(|&num| {
 LL | |         sum += num;
 LL | |     });
-   | |______^ help: try using `fold` instead: `sum += numbers.iter().map(|&num|  num).fold(0, |mut sum, v| { sum += v; sum })`
+   | |______^ help: try using `fold` instead: `sum += numbers.iter().map(|&num| { num}).fold(0, |mut sum, v| { sum += v; sum })`
    |
    = note: `-D fold-simple` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(fold_simple)]`
 
-error: aborting due to 1 previous error
+error: implicit fold
+  --> $DIR/main.rs:21:5
+   |
+LL | /     (0..some_num.len()).into_iter().for_each(|_| {
+LL | |         let (_, upload_size) = (true, 99);
+LL | |         file_total_size += upload_size;
+LL | |     });
+   | |______^ help: try using `fold` instead: `file_total_size += (0..some_num.len()).into_iter().map(|_| {let (_, upload_size) = (true, 99); upload_size}).fold(0, |mut file_total_size, v| { file_total_size += v; file_total_size })`
+
+error: aborting due to 2 previous errors
 
