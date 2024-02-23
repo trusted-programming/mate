@@ -24,6 +24,8 @@ fn main() {
     complex();
     complex_no_send();
     complex_type_no_trait();
+    iter_returned();
+    iter_returned_not_top_level();
 }
 
 // should parallelize
@@ -122,6 +124,14 @@ fn complex_type_no_trait() {
 }
 
 // no
-pub fn iter_mut() -> Range<usize> {
+pub fn iter_returned() -> Range<usize> {
     (0..100).into_iter()
+}
+
+// no
+pub fn iter_returned_not_top_level() {
+    match core::char::decode_utf16([1234 as u16, 1232 as u16].iter().copied()).next() {
+        Some(Ok(code)) => code,
+        _ => return,
+    };
 }

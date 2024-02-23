@@ -51,7 +51,11 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
             {
                 let mut top_expr = *recv;
                 while let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(top_expr.hir_id) {
-                    top_expr = parent_expr;
+                    if let ExprKind::MethodCall(_, _, _, _) = parent_expr.kind {
+                        top_expr = parent_expr; // Save the previous expression
+                    } else {
+                        break; // Stop if the parent expression is not a method call
+                    }
                 }
                 let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
                 if let TyKind::Adt(_, _) = ty.kind() {
