@@ -141,7 +141,7 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
             | ExprKind::Break(_, _) => self.is_valid = false,
             ExprKind::Path(ref path) => {
                 if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
-                    if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
+                    if let Node::Local(local) = self.cx.tcx.parent_hir_node(hir_id) {
                         if self.is_arg {
                             self.arg_variables.push(local.hir_id);
                             return;

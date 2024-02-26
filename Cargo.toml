@@ -39,7 +39,7 @@ members = [
 dylint_testing = "2.6.1"
 
 [workspace.dependencies]
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "6aa5f1ac6ff7628d02d9b21acb288ad3048e2f70" }
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "aa2c94e416d346341fe3a875160a7d064596f4d3" }
 utils = { path = "utils" }
 
 [workspace.metadata.dylint]

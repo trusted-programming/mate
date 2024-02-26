@@ -7,7 +7,7 @@ extern crate rustc_hir;
 extern crate rustc_middle;
 extern crate rustc_span;
 
-use clippy_utils::{get_trait_def_id, ty::implements_trait};
+use clippy_utils::{get_parent_expr, get_trait_def_id, ty::implements_trait};
 use rustc_errors::Applicability;
 use rustc_hir::{
     def::Res,
@@ -22,7 +22,7 @@ dylint_linting::declare_late_lint! {
     /// ### What it does
     /// parallelize iterators using rayon
     /// ### Why is this bad?
-    /// parrallel iters are often faster
+    /// parallel iters are often faster
     /// ### Known problems
     /// lots
     ///
@@ -50,7 +50,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 && is_type_valid(cx, ty)
             {
                 let mut top_expr = *recv;
-                while let Node::Expr(parent_expr) = cx.tcx.hir().get_parent(top_expr.hir_id) {
+                while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
                     if let ExprKind::MethodCall(_, _, _, _) = parent_expr.kind {
                         top_expr = parent_expr; // Save the previous expression
                     } else {
@@ -106,7 +106,7 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
                             self.is_valid = false;
                         }
                     }
-                    if let Node::Local(local) = self.cx.tcx.hir().get_parent(hir_id) {
+                    if let Node::Local(local) = self.cx.tcx.parent_hir_node(hir_id) {
                         if let Some(expr) = local.init {
                             self.is_valid &= is_type_valid(
                                 self.cx,
