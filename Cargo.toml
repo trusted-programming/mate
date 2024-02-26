@@ -44,3 +44,13 @@ utils = { path = "utils" }
 
 [workspace.metadata.dylint]
 clibraries = [{ path = "../mate" }]
+
+# TODO:
+# [workspace.lints.clippy]
+# pedantic = { level = "forbid", priority = -1 }
+# restriction = { level = "forbid", priority = -2 }
+# style = { level = "forbid", priority = -3 }
+# perf = { level = "forbid", priority = -4 }
+# complexity = { level = "forbid", priority = -4 }
+# cargo = { level = "forbid", priority = -4 }
+# correctness = { level = "forbid", priority = -4 }

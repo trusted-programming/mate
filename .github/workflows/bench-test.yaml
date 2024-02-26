@@ -41,7 +41,7 @@ jobs:
 
       - name: add Cargo.toml dylint lib link
         working-directory: ./${{ matrix.project }}
-        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/cargo-mate\"},\n]" >> Cargo.toml
+        run: echo -e "\n[workspace.metadata.dylint]\nlibraries = [\n    { git = \"https://github.com/trusted-programming/mate\"},\n]" >> Cargo.toml
 
       - name: add rayon
         working-directory: ./${{ matrix.project }}
