@@ -6,8 +6,8 @@ use rustc_span::{sym, Symbol};
 
 use crate::constants::{TRAIT_PATHS, TRAIT_REF_PATHS};
 
-pub(crate) fn check_implements_par_iter<'a, 'tcx>(
-    cx: &'tcx LateContext<'a>,
+pub(crate) fn check_implements_par_iter<'tcx>(
+    cx: &'tcx LateContext,
     expr: &'tcx hir::Expr<'_>,
 ) -> bool {
     let ty = cx.typeck_results().expr_ty(expr);
