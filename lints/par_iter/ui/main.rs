@@ -38,6 +38,12 @@ fn simple_no_send_in_closure_body() {
     (0..100).into_iter().for_each(|x| list.push(Rc::new(x)));
 }
 
+// no
+fn simple_no_send_in_closure_body_from_inside() {
+    let mut list = Vec::new();
+    (0..100).into_iter().for_each(|x| list.push(Rc::new(x)));
+}
+
 // should parallelize
 fn simple_move_inside_closure() {
     let y = 100;
@@ -47,11 +53,29 @@ fn simple_move_inside_closure() {
 }
 
 // no
-fn simple_mut_ref() {
+fn simple_no_push_to_vec() {
     let thread_num = 10;
     let mut locals = Vec::new();
     (0..thread_num).into_iter().for_each(|_| {
         locals.push(LocalQueue {});
+    });
+}
+
+// no
+fn simple_no_push_to_linked_list() {
+    let thread_num = 10;
+    let mut locals = LinkedList::new();
+    (0..thread_num).into_iter().for_each(|_| {
+        locals.push_back(2);
+    });
+}
+
+// no
+fn simple_no_insert_to_usize() {
+    let thread_num = 10;
+    let mut num = 0;
+    (0..thread_num).into_iter().for_each(|i| {
+        num += i;
     });
 }
 
@@ -129,18 +153,18 @@ pub fn iter_returned_not_top_level() {
     };
 }
 
-// // no
-// impl Pantheon {
-//     fn do_something(&mut self) {
-//         let tasks = vec!["go", "come", "listen"];
-//         tasks.into_iter().for_each(|task| {
-//             self.process(task.to_string());
-//         });
-//     }
-//     fn process(&mut self, task: String) {
-//         self.tasks.push(task);
-//     }
-// }
+// no
+impl Pantheon {
+    fn do_something(&mut self) {
+        let tasks = vec!["go", "come", "listen"];
+        tasks.into_iter().for_each(|task| {
+            self.process(task.to_string());
+        });
+    }
+    fn process(&mut self, task: String) {
+        self.tasks.push(task);
+    }
+}
 
 // // no
 // pub fn complex_long_chain_no_par() {
@@ -166,41 +190,43 @@ pub fn iter_returned_not_top_level() {
 //         });
 // }
 
-// #[derive(Debug)]
-// enum MyEnum {
-//     A,
-//     B,
-//     C,
-// }
+#[derive(Debug)]
+enum MyEnum {
+    A,
+    B,
+    C,
+}
 
-// // should parallelize
-// pub fn complex_long_chain() {
-//     let data = vec![1, 2, 3, 4, 5];
-//     let multiplier = 2;
-//     let threshold = 5;
-//     let my_string = "Hello".to_string();
-//     let my_enum = MyEnum::B; // Construct the enum variant
+// should parallelize
+pub fn complex_long_chain() {
+    let data = vec![1, 2, 3, 4, 5];
+    let multiplier = 2;
+    let threshold = 5;
+    let my_string = "Hello".to_string();
+    let my_enum = MyEnum::B; // Construct the enum variant
 
-//     data.iter()
-//         .map(|&x| {
-//             let transformed = (x * multiplier + my_string.len() as i32) / 2;
-//             transformed
-//         })
-//         .filter(|&x| {
-//             let result = x > threshold && x % my_string.len() as i32 == 0;
-//             result
-//         })
-//         .map(|x| {
-//             let result = match my_enum {
-//                 MyEnum::A => x + 1,
-//                 MyEnum::B => x + 2,
-//                 MyEnum::C => x + 3,
-//             };
-//             result
-//         })
-//         .filter_map(|x| if x % 3 == 0 { Some(x) } else { None })
-//         .for_each(|x| {
-//             println!("{}", x);
-//         });
-// }
+    data.iter()
+        .map(|&x| {
+            let transformed = (x * multiplier + my_string.len() as i32) / 2;
+            transformed
+        })
+        .filter(|&x| {
+            let result = x > threshold && x % my_string.len() as i32 == 0;
+            result
+        })
+        .map(|x| {
+            let result = match my_enum {
+                MyEnum::A => x + 1,
+                MyEnum::B => x + 2,
+                MyEnum::C => x + 3,
+            };
+            result
+        })
+        .filter_map(|x| if x % 3 == 0 { Some(x) } else { None })
+        .for_each(|x| {
+            println!("{}", x);
+        });
+}
 // TODO: add test with invalid method in it eg. peekable
+// TODO: closure with non send sync argument
+// TODO: multiple iter in one chain
