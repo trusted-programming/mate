@@ -7,16 +7,19 @@ extern crate rustc_hir;
 extern crate rustc_middle;
 extern crate rustc_span;
 
-use clippy_utils::{get_parent_expr, get_trait_def_id, ty::implements_trait};
+mod constants;
+mod utils;
+
+use clippy_utils::get_parent_expr;
 use rustc_errors::Applicability;
 use rustc_hir::{
+    self as hir,
     def::Res,
     intravisit::{walk_expr, Visitor},
-    BindingAnnotation, Expr, ExprKind, Mutability, Node, PatKind, PathSegment,
 };
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::{ty_kind::TyKind, GenericArg, GenericArgKind, Ty};
-use rustc_span::{sym, Symbol};
+use rustc_middle::ty::{ty_kind::TyKind, Ty};
+use utils::{check_implements_par_iter, generate_suggestion, is_type_valid};
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -40,27 +43,30 @@ dylint_linting::declare_late_lint! {
 }
 
 impl<'tcx> LateLintPass<'tcx> for ParIter {
-    fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if let ExprKind::MethodCall(path, recv, _args, _span) = &expr.kind
+    fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx hir::Expr<'_>) {
+        if let hir::ExprKind::MethodCall(path, recv, _args, _span) = &expr.kind
             && let Some(suggestion) = generate_suggestion(cx, expr, path)
         {
             let ty = cx.typeck_results().expr_ty(recv);
 
-            if (check_implements_par_iter(cx, recv) || check_implements_ref_par_iter(cx, recv))
-                && is_type_valid(cx, ty)
-            {
+            if check_implements_par_iter(cx, recv) && is_type_valid(cx, ty) {
                 let mut top_expr = *recv;
+
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
-                    if let ExprKind::MethodCall(_, _, _, _) = parent_expr.kind {
+                    if let hir::ExprKind::MethodCall(_, _, _, _) = parent_expr.kind {
                         top_expr = parent_expr; // Save the previous expression
                     } else {
                         break; // Stop if the parent expression is not a method call
                     }
                 }
+
                 let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+
+                // TODO: this needs to change and find a better solutions for returns
                 if let TyKind::Adt(_, _) = ty.kind() {
                     return;
                 }
+
                 let mut validator = Validator { cx, is_valid: true };
                 validator.visit_expr(top_expr);
                 if !validator.is_valid {
@@ -89,113 +95,103 @@ struct Validator<'a, 'tcx> {
     is_valid: bool,
 }
 
-impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
-    fn visit_expr(&mut self, ex: &Expr) {
+struct ExprVisitor<'a, 'tcx> {
+    cx: &'a LateContext<'tcx>,
+    expr_scope: hir::HirId,
+    is_valid: bool,
+}
+
+impl<'a, 'tcx> Visitor<'_> for ExprVisitor<'a, 'tcx> {
+    fn visit_qpath(
+        &mut self,
+        qpath: &'_ hir::QPath<'_>,
+        id: hir::HirId,
+        _span: rustc_span::Span,
+    ) -> Self::Result {
+        if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(qpath, id) {
+            if let hir::Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
+                dbg!(self
+                    .cx
+                    .sess()
+                    .source_map()
+                    .span_to_snippet(pat.span)
+                    .unwrap());
+
+                return self.visit_pat(pat);
+            }
+            if let hir::Node::Local(l) = self.cx.tcx.parent_hir_node(hir_id) {
+                self.visit_local(l)
+            }
+        }
+    }
+    fn visit_pat(&mut self, p: &'_ hir::Pat<'_>) -> Self::Result {
+        if let hir::PatKind::Binding(hir::BindingAnnotation(_, hir::Mutability::Mut), _, _, _) =
+            p.kind
+        {
+            self.is_valid = false;
+        }
+    }
+    fn visit_local(&mut self, l: &'_ hir::Local<'_>) -> Self::Result {
+        if let Some(local_scope) = self.cx.tcx.hir().get_enclosing_scope(l.hir_id)
+            && self.expr_scope == local_scope
+        {
+            return;
+        }
+        if let Some(expr) = l.init {
+            self.is_valid &= is_type_valid(
+                self.cx,
+                self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
+            );
+        }
+    }
+    fn visit_block(&mut self, b: &'_ hir::Block<'_>) -> Self::Result {
+        for stmt in b.stmts {
+            if let Some(scope) = self.cx.tcx.hir().get_enclosing_scope(stmt.hir_id) {
+                self.expr_scope = scope;
+            }
+            self.visit_stmt(stmt);
+        }
+    }
+    fn visit_stmt(&mut self, s: &'_ hir::Stmt<'_>) -> Self::Result {
+        match s.kind {
+            hir::StmtKind::Expr(e) => self.visit_expr(e),
+            hir::StmtKind::Item(_) => {}
+            hir::StmtKind::Local(l) => self.visit_local(l),
+            hir::StmtKind::Semi(e) => self.visit_expr(e),
+        }
+    }
+    fn visit_expr(&mut self, ex: &hir::Expr) {
         match ex.kind {
-            ExprKind::Closure(closure) => {
-                if let Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
+            hir::ExprKind::Closure(closure) => {
+                if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
                     walk_expr(self, expr);
                 }
             }
-            ExprKind::Path(ref path) => {
-                if let Res::Local(hir_id) = self.cx.typeck_results().qpath_res(path, ex.hir_id) {
-                    if let Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
-                        if let PatKind::Binding(BindingAnnotation(_, Mutability::Mut), _, _, _) =
-                            pat.kind
-                        {
-                            self.is_valid = false;
-                        }
-                    }
-                    if let Node::Local(local) = self.cx.tcx.parent_hir_node(hir_id) {
-                        if let Some(expr) = local.init {
-                            self.is_valid &= is_type_valid(
-                                self.cx,
-                                self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
-                            );
-                        }
-                    }
-                }
+            hir::ExprKind::Block(b, _) => {
+                self.visit_block(b);
             }
-            _ => walk_expr(self, ex),
+            hir::ExprKind::Path(ref qpath) => self.visit_qpath(qpath, ex.hir_id, qpath.span()),
+            // TODO: handle other cases
+            _ => {}
         }
     }
 }
 
-fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
-    let is_send = check_trait_impl(cx, ty, sym::Send);
-    let is_sync = check_trait_impl(cx, ty, sym::Sync);
-    let is_copy = check_trait_impl(cx, ty, sym::Copy);
-    is_copy || (is_send && is_sync)
-}
-
-fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
-    cx.tcx
-        .get_diagnostic_item(trait_name)
-        .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
-}
-
-fn generate_suggestion(
-    cx: &LateContext<'_>,
-    expr: &Expr<'_>,
-    path: &PathSegment,
-) -> Option<String> {
-    let method_name = &path.ident.name.to_string()[..];
-    let replacement = match method_name {
-        "into_iter" => Some("into_par_iter"),
-        "iter" => Some("par_iter"),
-        "iter_mut" => Some("par_iter_mut"),
-        _ => None,
-    };
-
-    if let Some(r) = replacement {
-        cx.sess()
-            .source_map()
-            .span_to_snippet(expr.span)
-            .map(|s| Some(s.replace(method_name, r)))
-            .unwrap_or_else(|_| None)
-    } else {
-        None
+impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
+    fn visit_expr(&mut self, ex: &hir::Expr) {
+        if let hir::ExprKind::MethodCall(_path_segment, _expr, args, _span) = ex.kind {
+            args.iter().for_each(|arg| {
+                let mut expr_visitor = ExprVisitor {
+                    cx: self.cx,
+                    expr_scope: self.cx.tcx.hir().get_enclosing_scope(arg.hir_id).unwrap(),
+                    is_valid: true,
+                };
+                expr_visitor.visit_expr(arg);
+                self.is_valid &= expr_visitor.is_valid;
+                walk_expr(self, ex)
+            })
+        }
     }
-}
-
-fn check_implements_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
-    let trait_paths = [
-        ["rayon", "iter", "IntoParallelIterator"],
-        ["rayon", "iter", "ParallelIterator"],
-        ["rayon", "iter", "IndexedParallelIterator"],
-    ];
-    let ty = cx.typeck_results().expr_ty(expr);
-
-    trait_paths.iter().any(|path| {
-        get_trait_def_id(cx, path).map_or(false, |trait_def_id| {
-            implements_trait(cx, ty, trait_def_id, &[])
-        })
-    })
-}
-
-fn check_implements_ref_par_iter<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) -> bool {
-    let trait_paths = [
-        ["rayon", "iter", "IntoParallelRefMutIterator"],
-        ["rayon", "iter", "IntoParallelRefIterator"],
-    ];
-    let ty = cx.typeck_results().expr_ty(expr);
-
-    let lt;
-    if let Some(lifetime) = ty
-        .walk()
-        .find(|t| matches!(t.unpack(), GenericArgKind::Lifetime(_)))
-    {
-        lt = lifetime;
-    } else {
-        let static_region = cx.tcx.lifetimes.re_static;
-        lt = GenericArg::from(static_region);
-    }
-
-    trait_paths.iter().any(|path| {
-        get_trait_def_id(cx, path).map_or(false, |trait_def_id| {
-            implements_trait(cx, ty, trait_def_id, &[lt])
-        })
-    })
 }
 
 #[test]

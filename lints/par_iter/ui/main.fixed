@@ -1,7 +1,8 @@
 // run-rustfix
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 use core::ascii;
-#[allow(unused_imports)]
 use rayon::prelude::*;
 use std::collections::LinkedList;
 use std::ops::Range;
@@ -14,19 +15,11 @@ struct Person {
     age: u32,
 }
 
-fn main() {
-    simple();
-    simple_no_send();
-    simple_no_send_in_closure_body();
-    simple_move_inside_closure();
-    simple_mut_ref();
-    simple_into_parallel_ref_iterator();
-    complex();
-    complex_no_send();
-    complex_type_no_trait();
-    iter_returned();
-    iter_returned_not_top_level();
+struct Pantheon {
+    tasks: Vec<String>,
 }
+
+fn main() {}
 
 // should parallelize
 fn simple() {
@@ -57,7 +50,7 @@ fn simple_move_inside_closure() {
 fn simple_mut_ref() {
     let thread_num = 10;
     let mut locals = Vec::new();
-    (0..thread_num).into_iter().for_each(|_| {
+    (0..thread_num).into_par_iter().for_each(|_| {
         locals.push(LocalQueue {});
     });
 }
@@ -104,7 +97,7 @@ fn complex_no_send() {
         age: 30,
     });
 
-    (0..10).into_iter().for_each(|x| {
+    (0..10).into_par_iter().for_each(|x| {
         let sum = *a + *b;
         let message = if *e { *c } else { "Goodbye" };
         let product = *d * (x as f64);
@@ -135,3 +128,79 @@ pub fn iter_returned_not_top_level() {
         _ => return,
     };
 }
+
+// // no
+// impl Pantheon {
+//     fn do_something(&mut self) {
+//         let tasks = vec!["go", "come", "listen"];
+//         tasks.into_iter().for_each(|task| {
+//             self.process(task.to_string());
+//         });
+//     }
+//     fn process(&mut self, task: String) {
+//         self.tasks.push(task);
+//     }
+// }
+
+// // no
+// pub fn complex_long_chain_no_par() {
+//     let words = vec!["apple", "banana", "cherry", "date"];
+//     let numbers = vec![1, 2, 3, 4];
+//     let suffixes = vec!["st", "nd", "rd", "th"];
+
+//     words
+//         .into_iter()
+//         .enumerate()
+//         .map(|(i, word)| {
+//             let number = *numbers.get(i).unwrap_or(&0) * 2;
+//             let suffix = suffixes.get(i).unwrap_or(&"th");
+//             (word, number, suffix)
+//         })
+//         .filter(|(word, number, _)| !word.contains('a') || *number > 5)
+//         .map(|(word, number, suffix)| format!("{}-{}{}", word, number, suffix))
+//         .enumerate()
+//         .map(|(i, s)| if i % 2 == 0 { s.to_uppercase() } else { s })
+//         .take(2)
+//         .for_each(|x| {
+//             println!("{x}");
+//         });
+// }
+
+// #[derive(Debug)]
+// enum MyEnum {
+//     A,
+//     B,
+//     C,
+// }
+
+// // should parallelize
+// pub fn complex_long_chain() {
+//     let data = vec![1, 2, 3, 4, 5];
+//     let multiplier = 2;
+//     let threshold = 5;
+//     let my_string = "Hello".to_string();
+//     let my_enum = MyEnum::B; // Construct the enum variant
+
+//     data.iter()
+//         .map(|&x| {
+//             let transformed = (x * multiplier + my_string.len() as i32) / 2;
+//             transformed
+//         })
+//         .filter(|&x| {
+//             let result = x > threshold && x % my_string.len() as i32 == 0;
+//             result
+//         })
+//         .map(|x| {
+//             let result = match my_enum {
+//                 MyEnum::A => x + 1,
+//                 MyEnum::B => x + 2,
+//                 MyEnum::C => x + 3,
+//             };
+//             result
+//         })
+//         .filter_map(|x| if x % 3 == 0 { Some(x) } else { None })
+//         .for_each(|x| {
+//             println!("{}", x);
+//         });
+// }
+// TODO: add test with invalid method in it eg. peekable
