@@ -32,11 +32,11 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
 
             // Collect a set of local definitions, the expression we wish to analyze and
             // the statements following it
-            let (pat_expr, local_defs_span, body_span) =
-                match utils::get_pat_expr_and_spans(cls_body.value) {
-                    Ok(v) => v,
-                    _ => return,
-                };
+            let Some((Some(pat_expr), local_defs_span, body_span)) =
+                utils::get_pat_expr_and_spans(cls_body.value)
+            else {
+                return;
+            };
 
             // Check for an if with early return in the success branch.
             let ExprKind::If(cond, fail, then) = &pat_expr.kind else {
@@ -65,17 +65,17 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
                         let ExprKind::Block(then_block, _) = then.kind else {
                             return;
                         };
-                        if !then_block.stmts.is_empty() {
+                        if then_block.stmts.is_empty() {
+                            then_block
+                                .expr
+                                .map_or(String::new(), |e| span_to_snippet_macro(src_map, e.span))
+                        } else {
                             let fst_span = then_block.stmts[0].span;
                             let lst_span = match then_block.expr {
                                 None => then_block.stmts[then_block.stmts.len() - 1].span,
                                 Some(e) => e.span,
                             };
                             span_to_snippet_macro(src_map, fst_span.to(lst_span))
-                        } else {
-                            then_block
-                                .expr
-                                .map_or(String::new(), |e| span_to_snippet_macro(src_map, e.span))
                         }
                     }
                     None => String::new(),
@@ -85,12 +85,12 @@ impl<'tcx> LateLintPass<'tcx> for FilterSimpleFlipped {
             let local_defs_snip =
                 local_defs_span.map_or(String::new(), |sp| span_to_snippet_macro(src_map, sp));
 
-            let pat_snip = if !cls_body.params.is_empty() {
+            let pat_snip = if cls_body.params.is_empty() {
+                String::new()
+            } else {
                 let fst_span = cls_body.params[0].span;
                 let lst_span = cls_body.params[cls_body.params.len() - 1].span;
                 span_to_snippet_macro(src_map, fst_span.to(lst_span))
-            } else {
-                String::new()
             };
 
             let cond_snip = span_to_snippet_macro(src_map, cond.span);

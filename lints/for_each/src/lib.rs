@@ -70,11 +70,8 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
             let pat_snip = span_to_snippet_macro(src_map, pat.span);
             let body_snip = span_to_snippet_macro(src_map, body.span);
 
-            let suggestion = format!(
-                "({}){}.for_each(|{}| {});",
-                iter_snip, mc_snip, pat_snip, body_snip
-            )
-            .replace("continue;", "return;");
+            let suggestion = format!("({iter_snip}){mc_snip}.for_each(|{pat_snip}| {body_snip});",)
+                .replace("continue;", "return;");
 
             cx.span_lint(
                 FOR_EACH,

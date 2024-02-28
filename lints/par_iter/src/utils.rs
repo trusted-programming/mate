@@ -56,7 +56,7 @@ pub(crate) fn generate_suggestion(
     expr: &hir::Expr<'_>,
     path: &hir::PathSegment,
 ) -> Option<String> {
-    let method_name = &path.ident.name.to_string()[..];
+    let method_name = &*path.ident.name.to_string();
     let replacement = match method_name {
         "into_iter" => Some("into_par_iter"),
         "iter" => Some("par_iter"),
@@ -68,8 +68,7 @@ pub(crate) fn generate_suggestion(
         cx.sess()
             .source_map()
             .span_to_snippet(expr.span)
-            .map(|s| Some(s.replace(method_name, r)))
-            .unwrap_or_else(|_| None)
+            .map_or_else(|_| None, |s| Some(s.replace(method_name, r)))
     } else {
         None
     }

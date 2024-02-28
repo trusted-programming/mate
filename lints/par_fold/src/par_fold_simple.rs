@@ -52,7 +52,7 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldSimple {
             let id_snip = span_to_snippet_macro(src_map, id_expr.span);
 
             let suggestion = "reduce".to_string();
-            let suggestion2 = format!("|| {}", id_snip);
+            let suggestion2 = format!("|| {id_snip}");
             ir.suggestions
                 .extend_from_slice(&[(path.ident.span, suggestion), (id_expr.span, suggestion2)]);
 

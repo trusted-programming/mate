@@ -160,10 +160,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
             return;
         }
         match s.kind {
-            hir::StmtKind::Expr(e) => self.visit_expr(e),
+            hir::StmtKind::Expr(e) | hir::StmtKind::Semi(e) => self.visit_expr(e),
             hir::StmtKind::Item(_) => {}
             hir::StmtKind::Local(l) => self.visit_local(l),
-            hir::StmtKind::Semi(e) => self.visit_expr(e),
         }
     }
 
@@ -179,7 +178,7 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
                 self.visit_expr(expr);
             }
         } else {
-            hir::intravisit::walk_expr(self, ex)
+            hir::intravisit::walk_expr(self, ex);
         }
     }
 }
@@ -187,7 +186,7 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
 impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &hir::Expr) {
         if let hir::ExprKind::MethodCall(_method_name, _receiver, args, _span) = ex.kind {
-            args.iter().for_each(|arg| {
+            for arg in args {
                 let mut expr_visitor = ExprVisitor {
                     cx: self.cx,
                     is_valid: true,
@@ -195,7 +194,7 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
 
                 expr_visitor.visit_expr(arg);
                 self.is_valid &= expr_visitor.is_valid;
-            })
+            }
         }
     }
 }

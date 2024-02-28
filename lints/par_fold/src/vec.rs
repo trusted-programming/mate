@@ -30,7 +30,21 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldVec {
             let cls_body = hir_map.body(op_cls.body);
 
             let Ok(StmtKind::Semi(fold_op)) =
-                utils::get_penult_stmt(cls_body.value).map(|s| s.kind)
+                if let ExprKind::Block(block, _) = &cls_body.value.kind {
+                    match block.stmts.len() {
+                        0 => Err(()),
+                        l => {
+                            if l == 1 && block.expr.is_none() {
+                                Err(())
+                            } else {
+                                Ok(&block.stmts[l - 1])
+                            }
+                        }
+                    }
+                } else {
+                    Err(())
+                }
+                .map(|s| s.kind)
             else {
                 return;
             };

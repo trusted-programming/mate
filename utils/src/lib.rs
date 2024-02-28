@@ -19,92 +19,69 @@ pub fn is_local_def(stmt: &Stmt) -> bool {
                 false
             }
         }
-        _ => false,
+        StmtKind::Item(_) => false,
     }
 }
 
+#[must_use]
 pub fn get_pat_expr_and_spans<'a>(
     expr: &'a Expr<'a>,
-) -> Result<(&'a Expr<'a>, Option<Span>, Option<Span>), ()> {
+) -> Option<(Option<&'a Expr<'a>>, Option<Span>, Option<Span>)> {
     let mut local_defs_span = None;
     let mut body_span = None;
     let pat_expr = if let ExprKind::Block(block, _) = &expr.kind {
-        match block.stmts.len() {
-            0 => {
-                if block.expr.is_none() {
-                    return Err(());
-                }
-                block.expr.unwrap()
-            }
-            _ => {
-                let mut local_defs = vec![];
-                let mut body = vec![];
-                let mut add_locals = true;
-                for s in block.stmts.iter() {
-                    if is_local_def(s) & add_locals {
-                        local_defs.push(s.span);
-                    } else {
-                        add_locals = false;
-                        body.push(s);
-                    }
-                }
-                if !local_defs.is_empty() {
-                    let fst_span = local_defs[0];
-                    let lst_span = local_defs[local_defs.len() - 1];
-                    local_defs_span = Some(fst_span.to(lst_span));
-                }
-                if body.is_empty() {
-                    match block.expr {
-                        None => return Err(()),
-                        Some(expr) => expr,
-                    }
+        if block.stmts.is_empty() {
+            block.expr
+        } else {
+            let mut local_defs = vec![];
+            let mut body = vec![];
+            let mut add_locals = true;
+            for s in block.stmts {
+                if is_local_def(s) & add_locals {
+                    local_defs.push(s.span);
                 } else {
-                    match body.remove(0).kind {
-                        StmtKind::Expr(e) | StmtKind::Semi(e) => {
-                            if !body.is_empty() {
-                                let fst_span = body[0].span;
-                                let lst_span = match block.expr {
-                                    None => body[body.len() - 1].span,
-                                    Some(e) => e.span,
-                                };
-                                body_span = Some(fst_span.to(lst_span));
-                            } else {
-                                body_span = block.expr.map(|e| e.span);
-                            }
-                            e
+                    add_locals = false;
+                    body.push(s);
+                }
+            }
+            if !local_defs.is_empty() {
+                let fst_span = local_defs[0];
+                let lst_span = local_defs[local_defs.len() - 1];
+                local_defs_span = Some(fst_span.to(lst_span));
+            }
+            if body.is_empty() {
+                block.expr
+            } else {
+                match body.remove(0).kind {
+                    StmtKind::Expr(e) | StmtKind::Semi(e) => {
+                        if body.is_empty() {
+                            body_span = block.expr.map(|e| e.span);
+                        } else {
+                            let fst_span = body[0].span;
+                            let lst_span = match block.expr {
+                                None => body[body.len() - 1].span,
+                                Some(e) => e.span,
+                            };
+                            body_span = Some(fst_span.to(lst_span));
                         }
-                        _ => return Err(()),
+                        Some(e)
                     }
+                    _ => return None,
                 }
             }
         }
     } else {
-        expr
+        Some(expr)
     };
-    Ok((pat_expr, local_defs_span, body_span))
-}
-
-pub fn get_penult_stmt<'a>(expr: &'a Expr<'a>) -> Result<&'a Stmt<'a>, ()> {
-    if let ExprKind::Block(block, _) = &expr.kind {
-        match block.stmts.len() {
-            0 => Err(()),
-            l => {
-                if l == 1 && block.expr.is_none() {
-                    Err(())
-                } else {
-                    Ok(&block.stmts[l - 1])
-                }
-            }
-        }
-    } else {
-        Err(())
-    }
+    Some((pat_expr, local_defs_span, body_span))
 }
 
 pub fn span_to_snippet_macro(src_map: &SourceMap, span: Span) -> String {
     if span.ctxt() == SyntaxContext::root() {
         // It's not a macro, proceed as usual
-        src_map.span_to_snippet(span).unwrap()
+        src_map
+            .span_to_snippet(span)
+            .unwrap_or_else(|_| String::new())
     } else {
         // TODO: Handle the macro case
         // The combined_span originates from a macro expansion

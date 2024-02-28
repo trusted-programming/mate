@@ -46,11 +46,11 @@ impl<'tcx> LateLintPass<'tcx> for FoldVec {
 
             // Collect a set of local definitions, the expression we wish to analyze and
             // the statements following it
-            let (pat_expr, local_defs_span, body_span) =
-                match utils::get_pat_expr_and_spans(cls_body.value) {
-                    Ok(v) => v,
-                    _ => return,
-                };
+            let Some((Some(pat_expr), local_defs_span, body_span)) =
+                utils::get_pat_expr_and_spans(cls_body.value)
+            else {
+                return;
+            };
 
             // We should only have one statement left
             if body_span.is_some() {
