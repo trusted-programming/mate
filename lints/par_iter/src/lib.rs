@@ -30,14 +30,16 @@ dylint_linting::declare_late_lint! {
     /// parallel iters are often faster
     /// ### Known problems
     /// lots
-    ///
+    /// changing to par iterators will cause the loss of ordering
     /// ### Example
     /// ```rust
-    /// // example code where a warning is issued
+    /// (0..100).into_iter().for_each(|x| println!("{:?}", x));
     /// ```
     /// Use instead:
     /// ```rust
-    /// // example code that does not raise a warning
+    /// use rayon::iter::*;
+    ///
+    /// (0..100).into_par_iter().for_each(|x| println!("{:?}", x));
     /// ```
     pub PAR_ITER,
     Warn,
@@ -57,9 +59,9 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
                     if let hir::ExprKind::MethodCall(_, _, _, _) = parent_expr.kind {
-                        top_expr = parent_expr; // Save the previous expression
+                        top_expr = parent_expr;
                     } else {
-                        break; // Stop if the parent expression is not a method call
+                        break;
                     }
                 }
 
@@ -137,12 +139,6 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         if !self.is_valid {
             return;
         }
-        // TODO: figure out the scope
-        // if let Some(local_scope) = self.cx.tcx.hir().get_enclosing_scope(l.hir_id)
-        //     && self.expr_scope == local_scope
-        // {
-        //     return;
-        // }
         if let Some(expr) = l.init {
             self.is_valid &= is_type_valid(
                 self.cx,
@@ -156,10 +152,6 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
             return;
         }
         for stmt in b.stmts {
-            // TODO: deal with scope
-            // if let Some(scope) = self.cx.tcx.hir().get_enclosing_scope(stmt.hir_id) {
-            //     self.expr_scope = scope;
-            // }
             self.visit_stmt(stmt);
         }
     }
@@ -181,11 +173,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         }
         if let hir::ExprKind::Closure(closure) = ex.kind {
             let body = self.cx.tcx.hir().body(closure.body);
-            // pub fn_decl: &'hir FnDecl<'hir>,
             if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
-                if self.is_valid {
-                    self.is_valid &= check_variables(self.cx, closure.def_id, body);
-                }
+                // TODO: figure out the scope
+                self.is_valid &= check_variables(self.cx, closure.def_id, body);
                 self.visit_expr(expr);
             }
         } else {
@@ -200,7 +190,6 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
             args.iter().for_each(|arg| {
                 let mut expr_visitor = ExprVisitor {
                     cx: self.cx,
-                    // expr_scope: self.cx.tcx.hir().get_enclosing_scope(arg.hir_id).unwrap(),
                     is_valid: true,
                 };
 

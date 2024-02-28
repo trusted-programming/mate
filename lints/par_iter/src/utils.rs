@@ -34,7 +34,6 @@ pub(crate) fn check_implements_par_iter<'tcx>(
     })
 }
 
-// TODO: check if with clippy_utils::sym is possible to replace check_implements_par_iter here
 pub(crate) fn check_trait_impl<'tcx>(
     cx: &LateContext<'tcx>,
     ty: Ty<'tcx>,
