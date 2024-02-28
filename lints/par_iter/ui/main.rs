@@ -230,3 +230,4 @@ pub fn complex_long_chain() {
 // TODO: add test with invalid method in it eg. peekable
 // TODO: closure with non send sync argument
 // TODO: multiple iter in one chain
+// TODO: add test with mut inside the closure to check for scoping issue
