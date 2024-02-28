@@ -21,6 +21,18 @@ jobs:
             systemabilitymgr_samgr,
           ]
     steps:
+      - name: Cache Cargo dependencies and binaries
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: clone repo
         uses: nick-fields/retry@v3
         with:
