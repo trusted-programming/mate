@@ -1,6 +1,8 @@
 // run-rustfix
 fn main() {
     warn_fold_simple();
+    warn_fold_vec();
+    warn_fold_hashmap();
     get_upload_file_total_size();
 }
 
@@ -13,6 +15,28 @@ fn warn_fold_simple() {
     });
 
     println!("Sum: {}", sum);
+}
+
+fn warn_fold_vec() {
+    let mut data = vec![];
+    let numbers = vec![1, 2, 3, 4, 5];
+    numbers.iter().for_each(|&num| {
+        data.push(num * 3);
+    });
+
+    println!("Data: {:?}", data);
+}
+
+fn warn_fold_hashmap() {
+    use std::collections::HashMap;
+
+    let mut data = HashMap::new();
+    let numbers = vec![1, 2, 3, 4, 5];
+    numbers.iter().for_each(|&num| {
+        data.insert(num, num.to_string());
+    });
+
+    println!("Data: {:?}", data);
 }
 
 fn get_upload_file_total_size() -> u64 {
