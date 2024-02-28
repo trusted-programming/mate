@@ -111,6 +111,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         id: hir::HirId,
         _span: rustc_span::Span,
     ) -> Self::Result {
+        if !self.is_valid {
+            return;
+        }
         if let hir::def::Res::Local(hir_id) = self.cx.typeck_results().qpath_res(qpath, id) {
             if let hir::Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
                 self.visit_pat(pat);
@@ -121,6 +124,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         }
     }
     fn visit_pat(&mut self, pat: &hir::Pat) -> Self::Result {
+        if !self.is_valid {
+            return;
+        }
         if let hir::PatKind::Binding(hir::BindingAnnotation(_, hir::Mutability::Mut), _, _, _) =
             pat.kind
         {
@@ -128,6 +134,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         }
     }
     fn visit_local(&mut self, l: &'_ hir::Local<'_>) -> Self::Result {
+        if !self.is_valid {
+            return;
+        }
         // TODO: figure out the scope
         // if let Some(local_scope) = self.cx.tcx.hir().get_enclosing_scope(l.hir_id)
         //     && self.expr_scope == local_scope
@@ -143,6 +152,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         }
     }
     fn visit_block(&mut self, b: &'_ hir::Block<'_>) -> Self::Result {
+        if !self.is_valid {
+            return;
+        }
         for stmt in b.stmts {
             // TODO: deal with scope
             // if let Some(scope) = self.cx.tcx.hir().get_enclosing_scope(stmt.hir_id) {
@@ -152,6 +164,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         }
     }
     fn visit_stmt(&mut self, s: &'_ hir::Stmt<'_>) -> Self::Result {
+        if !self.is_valid {
+            return;
+        }
         match s.kind {
             hir::StmtKind::Expr(e) => self.visit_expr(e),
             hir::StmtKind::Item(_) => {}
@@ -161,42 +176,20 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
     }
 
     fn visit_expr(&mut self, ex: &hir::Expr) {
-        match ex.kind {
-            hir::ExprKind::Closure(closure) => {
-                let body = self.cx.tcx.hir().body(closure.body);
-                // pub fn_decl: &'hir FnDecl<'hir>,
-                if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
-                    if self.is_valid {
-                        self.is_valid &= check_variables(self.cx, closure.def_id, body);
-                    }
-                    self.visit_expr(expr);
-                    hir::intravisit::walk_expr(self, expr);
+        if !self.is_valid {
+            return;
+        }
+        if let hir::ExprKind::Closure(closure) = ex.kind {
+            let body = self.cx.tcx.hir().body(closure.body);
+            // pub fn_decl: &'hir FnDecl<'hir>,
+            if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
+                if self.is_valid {
+                    self.is_valid &= check_variables(self.cx, closure.def_id, body);
                 }
+                self.visit_expr(expr);
             }
-            hir::ExprKind::Block(b, _) => {
-                self.visit_block(b);
-            }
-            hir::ExprKind::Path(ref qpath) => self.visit_qpath(qpath, ex.hir_id, qpath.span()),
-
-            // check return type of call if matches
-            hir::ExprKind::Call(func, args) => {
-                self.visit_expr(func);
-                args.iter().for_each(|arg| {
-                    self.visit_expr(arg);
-                });
-            }
-            hir::ExprKind::AssignOp(_op, target, value) => {
-                self.visit_expr(target);
-                self.visit_expr(value);
-            }
-            hir::ExprKind::MethodCall(_path_segment, receiver, args, _span) => {
-                self.visit_expr(receiver);
-                args.iter().for_each(|arg| {
-                    self.visit_expr(arg);
-                })
-            }
-            // TODO: handle other cases
-            _ => hir::intravisit::walk_expr(self, ex),
+        } else {
+            hir::intravisit::walk_expr(self, ex)
         }
     }
 }
@@ -212,7 +205,6 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
                 };
 
                 expr_visitor.visit_expr(arg);
-                hir::intravisit::walk_expr(self, ex);
                 self.is_valid &= expr_visitor.is_valid;
             })
         }
