@@ -21,18 +21,6 @@ jobs:
             systemabilitymgr_samgr,
           ]
     steps:
-      - name: Cache Cargo dependencies and binaries
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
       - name: clone repo
         uses: nick-fields/retry@v3
         with:
@@ -40,6 +28,17 @@ jobs:
           max_attempts: 3
           retry_on: error
           command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
+
+      - name: Cache Cargo dependencies and binaries
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ matrix.project }}-v1
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.project }}-v1
+            ${{ runner.os }}-cargo-${{ matrix.project }}-
+            ${{ runner.os }}-cargo-
 
       - name: get script
         working-directory: ./${{ matrix.project }}
