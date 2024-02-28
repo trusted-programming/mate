@@ -34,7 +34,9 @@ jobs:
 
       - name: Install dylint
         run: |
-          cargo install cargo-dylint dylint-link
+          if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
+            cargo install cargo-dylint dylint-link
+          fi
 
       - name: cargo fmt --check
         run: cargo fmt --check
@@ -68,7 +70,9 @@ jobs:
 
       - name: Install dylint
         run: |
-          cargo install cargo-dylint dylint-link
+          if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
+            cargo install cargo-dylint dylint-link
+          fi
 
       - name: cargo clippy
         run: cargo clippy --lib --all-features
@@ -100,7 +104,9 @@ jobs:
 
       - name: Install dylint
         run: |
-          cargo install cargo-dylint dylint-link
+          if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
+            cargo install cargo-dylint dylint-link
+          fi
 
       - name: cargo test
         run: cargo test --workspace

@@ -82,8 +82,11 @@ jobs:
           git add .
           git commit -am "test"
 
-      - name: install dylint
-        run: cargo install cargo-dylint dylint-link
+      - name: Install dylint
+        run: |
+          if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
+            cargo install cargo-dylint dylint-link
+          fi
 
       - name: lint fix
         working-directory: ./${{ matrix.project }}
