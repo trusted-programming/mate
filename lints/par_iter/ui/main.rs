@@ -204,90 +204,90 @@ pub fn complex_long_chain() {
         });
 }
 
-// // no
-// pub fn complex_long_chain_no_par() {
-//     let words = vec!["apple", "banana", "cherry", "date"];
-//     let numbers = vec![1, 2, 3, 4];
-//     let suffixes = vec!["st", "nd", "rd", "th"];
+// no
+pub fn complex_long_chain_no_par() {
+    let words = vec!["apple", "banana", "cherry", "date"];
+    let numbers = vec![1, 2, 3, 4];
+    let suffixes = vec!["st", "nd", "rd", "th"];
 
-//     words
-//         .into_iter()
-//         .enumerate()
-//         .map(|(i, word)| {
-//             let number = *numbers.get(i).unwrap_or(&0) * 2;
-//             let suffix = suffixes.get(i).unwrap_or(&"th");
-//             (word, number, suffix)
-//         })
-//         .filter(|(word, number, _)| !word.contains('a') || *number > 5)
-//         .map(|(word, number, suffix)| format!("{}-{}{}", word, number, suffix))
-//         .enumerate()
-//         .map(|(i, s)| if i % 2 == 0 { s.to_uppercase() } else { s })
-//         .take(2)
-//         .for_each(|x| {
-//             println!("{x}");
-//         });
-// }
-// TODO: add test with invalid method in it eg. peekable
-// // no
-// pub fn invalid_method() {
-//     let _ = (0..100).into_iter().peekable();
-// }
-// TODO: multiple iter in one chain
-// struct Person {
-//     name: String,
-//     age: u32,
-// }
-// // 1st should parallelize, 2nd should parallelize
-// fn multiple_iter_one_chain() {
-//     let people = vec![
-//         Person { name: "Alice".to_string(), age: 25 },
-//         Person { name: "Bob".to_string(), age: 35 },
-//         Person { name: "Carol".to_string(), age: 32 },
-//     ];
-//     let names_over_30: Vec<String> = people.iter() // Borrow each Person
-//         .filter(|p| p.age > 30) // Filter persons over 30
-//         .map(|p| p.name.clone()) // Clone name
-//         .collect::<Vec<String>>() // Collect names into a Vec<String>
-//         .into_iter() // Consume the Vec<String>
-//         .map(|name| format!("Name: {}", name)) // Transform each name
-//         .collect(); // Collect the transformed names into a new Vec<String>
-//     println!("{:?}", names_over_30);
-// }
-// TODO: add test with mut inside the closure to check for scoping issue
+    words
+        .into_iter()
+        .enumerate()
+        .map(|(i, word)| {
+            let number = *numbers.get(i).unwrap_or(&0) * 2;
+            let suffix = suffixes.get(i).unwrap_or(&"th");
+            (word, number, suffix)
+        })
+        .filter(|(word, number, _)| !word.contains('a') || *number > 5)
+        .map(|(word, number, suffix)| format!("{}-{}{}", word, number, suffix))
+        .enumerate()
+        .map(|(i, s)| if i % 2 == 0 { s.to_uppercase() } else { s })
+        .take(2)
+        .for_each(|x| {
+            println!("{x}");
+        });
+}
+
+// 1st should parallelize, 2nd should parallelize
+fn multiple_iter_one_chain() {
+    let people = vec![
+        Person {
+            name: "Alice".to_string(),
+            age: 25,
+        },
+        Person {
+            name: "Bob".to_string(),
+            age: 35,
+        },
+        Person {
+            name: "Carol".to_string(),
+            age: 32,
+        },
+    ];
+    let names_over_30: Vec<String> = people
+        .iter() // Borrow each Person
+        .filter(|p| p.age > 30) // Filter persons over 30
+        .map(|p| p.name.clone()) // Clone name
+        .collect::<Vec<String>>() // Collect names into a Vec<String>
+        .into_iter() // Consume the Vec<String>
+        .map(|name| format!("Name: {}", name)) // Transform each name
+        .collect(); // Collect the transformed names into a new Vec<String>
+    println!("{:?}", names_over_30);
+}
+
 // should parallelize
-// fn mut_var_declared_in_closure() {
-//     let numbers = vec![1, 2, 3, 4, 5];
-//     let doubled_numbers: Vec<i32> = numbers
-//         .into_iter()
-//         .map(|num| {
-//             let mut doubled = num * 2; // Mutable variable inside the closure
-//             doubled += 1; // Modify the mutable variable
-//             doubled // Return the modified value
-//         })
-//         .collect();
-//     println!("{:?}", doubled_numbers);
-// }
-//
-// TODO: mutable closure argument
-// // no
-//fn simple_fold() {
-//     let mut sum = 0;
-//     let numbers = vec![1, 2, 3, 4, 5];
-//     sum = numbers.iter().map(|&num| num).fold(0, |mut sum, v| {
-//         sum += v;
-//         sum
-//     });
-//     println!("Sum: {}", sum);
-// }
-//
-// // should parallelize
-// fn simple_iter_mut() {
-//     let mut numbers = vec![1, 2, 3, 4, 5];
-//     numbers.iter_mut().for_each(|num| *num *= 2); // Double each number
-//     println!("{:?}", numbers);
-// }
-//
-// // should parallelize
-// fn warn_fold_simple() {
-// (0..100).for_each(|x|println!("{x}"));
-// }
+fn mut_var_declared_in_closure() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    let doubled_numbers: Vec<i32> = numbers
+        .into_iter()
+        .map(|num| {
+            let mut doubled = num * 2; // Mutable variable inside the closure
+            doubled += 1; // Modify the mutable variable
+            doubled // Return the modified value
+        })
+        .collect();
+    println!("{:?}", doubled_numbers);
+}
+
+// no
+fn simple_fold() {
+    let sum;
+    let numbers = vec![1, 2, 3, 4, 5];
+    sum = numbers.iter().map(|&num| num).fold(0, |mut sum, v| {
+        sum += v;
+        sum
+    });
+    println!("Sum: {}", sum);
+}
+
+// should parallelize
+fn simple_iter_mut() {
+    let mut numbers = vec![1, 2, 3, 4, 5];
+    numbers.iter_mut().for_each(|num| *num *= 2); // Double each number
+    println!("{:?}", numbers);
+}
+
+// should parallelize
+fn no_iter_keywords() {
+    (0..100).for_each(|x| println!("{x}"));
+}

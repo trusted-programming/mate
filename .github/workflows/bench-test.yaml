@@ -52,10 +52,13 @@ jobs:
           curl -o prepare_repo.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/prepare_repo.sh
           bash prepare_repo.sh
 
-      - name: lint fix
+      - name: Lint fix (run 5 times)
         working-directory: ./${{ matrix.project }}
         continue-on-error: true
-        run: cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+        run: |
+          for i in {1..5}; do
+            cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+          done
 
       - name: cargo check
         working-directory: ./${{ matrix.project }}
