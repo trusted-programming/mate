@@ -33,7 +33,7 @@ LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:208:5
+  --> $DIR/main.rs:184:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
