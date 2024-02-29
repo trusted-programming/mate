@@ -49,7 +49,7 @@ jobs:
       - name: prepare repository for dylint
         working-directory: ./${{ matrix.project }}
         run: |
-          curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/prepare_repo.sh
+          curl -o prepare_repo.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/prepare_repo.sh
           bash prepare_repo.sh
 
       - name: lint fix
