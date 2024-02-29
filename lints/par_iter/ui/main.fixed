@@ -204,6 +204,62 @@ pub fn complex_long_chain() {
         });
 }
 
+// // should parallelize
+// fn collect_at_end() {
+//     let people = vec![
+//         Person {
+//             name: "Alice".to_string(),
+//             age: 25,
+//         },
+//         Person {
+//             name: "Bob".to_string(),
+//             age: 35,
+//         },
+//         Person {
+//             name: "Carol".to_string(),
+//             age: 32,
+//         },
+//     ];
+
+//     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
+
+//     println!("{:?}", names);
+// }
+
+// // 1st should parallelize, 2nd should parallelize
+// fn multiple_iter_one_chain() {
+//     let people = vec![
+//         Person {
+//             name: "Alice".to_string(),
+//             age: 25,
+//         },
+//         Person {
+//             name: "Bob".to_string(),
+//             age: 35,
+//         },
+//         Person {
+//             name: "Carol".to_string(),
+//             age: 32,
+//         },
+//     ];
+
+//     let mut counter = 0;
+
+//     let names_over_30: Vec<String> = people
+//         .iter()
+//         .filter(|p| p.age > 30)
+//         .map(|p| p.name.clone())
+//         .collect::<Vec<String>>()
+//         .into_iter()
+//         .map(|name| {
+//             counter += 1;
+//             format!("{}: {}", counter, name)
+//         })
+//         .collect();
+
+//     println!("{:?}", names_over_30);
+// }
+
 // // no
 // pub fn complex_long_chain_no_par() {
 //     let words = vec!["apple", "banana", "cherry", "date"];
@@ -226,33 +282,6 @@ pub fn complex_long_chain() {
 //         .for_each(|x| {
 //             println!("{x}");
 //         });
-// }
-
-// // 1st should parallelize, 2nd should parallelize
-// fn multiple_iter_one_chain() {
-//     let people = vec![
-//         Person {
-//             name: "Alice".to_string(),
-//             age: 25,
-//         },
-//         Person {
-//             name: "Bob".to_string(),
-//             age: 35,
-//         },
-//         Person {
-//             name: "Carol".to_string(),
-//             age: 32,
-//         },
-//     ];
-//     let names_over_30: Vec<String> = people
-//         .iter() // Borrow each Person
-//         .filter(|p| p.age > 30) // Filter persons over 30
-//         .map(|p| p.name.clone()) // Clone name
-//         .collect::<Vec<String>>() // Collect names into a Vec<String>
-//         .into_iter() // Consume the Vec<String>
-//         .map(|name| format!("Name: {}", name)) // Transform each name
-//         .collect(); // Collect the transformed names into a new Vec<String>
-//     println!("{:?}", names_over_30);
 // }
 
 // // should parallelize
