@@ -31,7 +31,7 @@ find . -type f -name "Cargo.toml" | while read -r file; do
                 echo -e "\n[dependencies]" >> "$file"
             fi
             # Add rayon under the [dependencies] line
-            sed -i '/\[dependencies\]/a rayon = "1.8.1"' "$file"
+            sed -i '/\[dependencies\]/a rayon = "1.9.0"' "$file"
         fi
     fi
 done
