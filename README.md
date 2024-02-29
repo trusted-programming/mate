@@ -1,5 +1,14 @@
 # Mate
 
+Mate is a linting library for the Rust programming language with a focus on identifying opportunities for parallelization in code. It aims to help developers leverage the power of parallel computing by providing automated suggestions for optimizing their Rust applications.
+
+## Features
+
+- **Automatic Detection**: Mate scans your codebase to find potential areas where parallelization can be applied.
+- **Optimization Suggestions**: Provides recommendations on how to modify your code to take advantage of parallel execution.
+- **Easy Integration**: Seamlessly integrates with your existing Rust projects and tooling.
+- **Automated Suggestions Application**: Mate can automatically implement its parallelization recommendations in your code through rustfix, streamlining the optimization process.
+
 ## Lints
 
 - for_each
