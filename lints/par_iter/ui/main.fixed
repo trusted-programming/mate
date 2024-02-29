@@ -226,7 +226,7 @@ pub fn complex_long_chain() {
 //     println!("{:?}", names);
 // }
 
-// // 1st should parallelize, 2nd should parallelize
+// // 1st should parallelize, 2nd no
 // fn multiple_iter_one_chain() {
 //     let people = vec![
 //         Person {

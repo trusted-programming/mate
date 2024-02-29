@@ -102,7 +102,6 @@ struct Validator<'a, 'tcx> {
 
 struct ExprVisitor<'a, 'tcx> {
     cx: &'a LateContext<'tcx>,
-    // expr_scope: hir::HirId,
     is_valid: bool,
 }
 
@@ -173,7 +172,6 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
         if let hir::ExprKind::Closure(closure) = ex.kind {
             let body = self.cx.tcx.hir().body(closure.body);
             if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
-                // TODO: figure out the scope
                 self.is_valid &= check_variables(self.cx, closure.def_id, body);
                 self.visit_expr(expr);
             }

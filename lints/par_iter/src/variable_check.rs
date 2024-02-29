@@ -12,6 +12,19 @@ use rustc_middle::{
     ty::{self, TyCtxt, UpvarId, UpvarPath},
 };
 
+pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
+    mutably_used_vars: hir::HirIdSet,
+    prev_bind: Option<hir::HirId>,
+    /// In async functions, the inner AST is composed of multiple layers until we reach the code
+    /// defined by the user. Because of that, some variables are marked as mutably borrowed even
+    /// though they're not. This field lists the `HirId` that should not be considered as mutable
+    /// use of a variable.
+    prev_move_to_closure: hir::HirIdSet,
+    aliases: hir::HirIdMap<hir::HirId>,
+    async_closures: FxHashSet<hir::def_id::LocalDefId>,
+    tcx: TyCtxt<'tcx>,
+}
+
 pub(crate) fn check_variables<'tcx>(
     cx: &LateContext<'tcx>,
     body_owner: hir::def_id::LocalDefId,
@@ -54,18 +67,6 @@ pub(crate) fn check_variables<'tcx>(
         ctx
     };
     mutably_used_vars.is_empty()
-}
-pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
-    mutably_used_vars: hir::HirIdSet,
-    prev_bind: Option<hir::HirId>,
-    /// In async functions, the inner AST is composed of multiple layers until we reach the code
-    /// defined by the user. Because of that, some variables are marked as mutably borrowed even
-    /// though they're not. This field lists the `HirId` that should not be considered as mutable
-    /// use of a variable.
-    prev_move_to_closure: hir::HirIdSet,
-    aliases: hir::HirIdMap<hir::HirId>,
-    async_closures: FxHashSet<hir::def_id::LocalDefId>,
-    tcx: TyCtxt<'tcx>,
 }
 
 pub(crate) fn check_closures<'tcx>(

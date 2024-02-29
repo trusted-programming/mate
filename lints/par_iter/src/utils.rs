@@ -34,11 +34,7 @@ pub(crate) fn check_implements_par_iter<'tcx>(
     })
 }
 
-pub(crate) fn check_trait_impl<'tcx>(
-    cx: &LateContext<'tcx>,
-    ty: Ty<'tcx>,
-    trait_name: Symbol,
-) -> bool {
+fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
     cx.tcx
         .get_diagnostic_item(trait_name)
         .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
