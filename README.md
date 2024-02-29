@@ -13,6 +13,17 @@
 - rayon_prelude
 - par_iter
 
+## Warnings
+
+often switching from an iterator to a parallel iterator will result in loss of ordering:
+
+```rust
+// will print in order from 0 to 100
+(0..100).into_iter().for_each(|x| println!("{:?}", x)); // 0 1 2 3 ...
+// will print in a random order depending on threads
+(0..100).into_par_iter().for_each(|x| println!("{:?}", x)); // 56 87 37 88 ...
+```
+
 ## How to run
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
