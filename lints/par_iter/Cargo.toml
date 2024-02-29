@@ -28,6 +28,10 @@ rlib = ["dylint_linting/constituent"]
 name = "par_iter_main"
 path = "ui/main.rs"
 
+[[example]]
+name = "par_iter_main2"
+path = "ui/main2.rs"
+
 [lints.clippy]
 # GROUPS
 perf = { level = "warn", priority = -1 }

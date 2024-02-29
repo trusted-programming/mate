@@ -1,5 +1,5 @@
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:26:5
+  --> $DIR/main.rs:27:5
    |
 LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..100).into_par_iter()`
@@ -8,7 +8,7 @@ LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    = help: to override `-D warnings` add `#[allow(par_iter)]`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:50:5
+  --> $DIR/main.rs:51:5
    |
 LL | /     (0..100)
 LL | |         .into_iter()
@@ -21,19 +21,19 @@ LL +         .into_par_iter()
    |
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:85:5
+  --> $DIR/main.rs:86:5
    |
 LL |     list.into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:101:5
+  --> $DIR/main.rs:102:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:184:5
+  --> $DIR/main.rs:185:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
