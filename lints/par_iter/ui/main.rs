@@ -291,3 +291,8 @@ fn simple_iter_mut() {
 fn no_iter_keywords() {
     (0..100).for_each(|x| println!("{x}"));
 }
+
+// should parallelize
+pub fn iter_returned_in_variable() {
+    let _: Range<i32> = (0..100).into_iter();
+}
