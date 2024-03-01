@@ -224,7 +224,7 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
     fn mutate(&mut self, cmt: &euv::PlaceWithHirId<'tcx>, _id: hir::HirId) {
         self.prev_bind = None;
         if let euv::Place {
-            projections,
+            projections: _,
             base:
                 euv::PlaceBase::Local(vid)
                 | euv::PlaceBase::Upvar(UpvarId {
@@ -234,9 +234,7 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
             ..
         } = &cmt.place
         {
-            if !projections.is_empty() {
-                self.add_mutably_used_var(*vid);
-            }
+            self.add_mutably_used_var(*vid);
         }
     }
 

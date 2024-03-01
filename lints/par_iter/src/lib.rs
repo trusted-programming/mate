@@ -116,22 +116,9 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
             return;
         }
         if let hir::def::Res::Local(hir_id) = self.cx.typeck_results().qpath_res(qpath, id) {
-            if let hir::Node::Pat(pat) = self.cx.tcx.hir_node(hir_id) {
-                self.visit_pat(pat);
-            }
             if let hir::Node::Local(l) = self.cx.tcx.parent_hir_node(hir_id) {
                 self.visit_local(l)
             }
-        }
-    }
-    fn visit_pat(&mut self, pat: &hir::Pat) -> Self::Result {
-        if !self.is_valid {
-            return;
-        }
-        if let hir::PatKind::Binding(hir::BindingAnnotation(_, hir::Mutability::Mut), _, _, _) =
-            pat.kind
-        {
-            self.is_valid = false;
         }
     }
     fn visit_local(&mut self, l: &'_ hir::Local<'_>) -> Self::Result {
