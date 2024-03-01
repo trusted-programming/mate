@@ -204,3 +204,11 @@ pub fn complex_long_chain() {
             println!("{}", x);
         });
 }
+
+fn enumerate_par_iter() {
+    let numbers = vec![1, 2, 3, 4, 5];
+
+    numbers.par_iter().enumerate().for_each(|t| {
+        dbg!(t);
+    });
+}

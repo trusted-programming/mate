@@ -38,5 +38,11 @@ error: found iterator that can be parallelized
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
-error: aborting due to 5 previous errors
+error: found iterator that can be parallelized
+  --> $DIR/main.rs:211:5
+   |
+LL |     numbers.iter().enumerate().for_each(|t| {
+   |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
+
+error: aborting due to 6 previous errors
 
