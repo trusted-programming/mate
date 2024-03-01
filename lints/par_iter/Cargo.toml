@@ -32,6 +32,10 @@ path = "ui/main.rs"
 name = "par_iter_main2"
 path = "ui/main2.rs"
 
+[[example]]
+name = "qos"
+path = "ui/qos.rs"
+
 [lints.clippy]
 # GROUPS
 perf = { level = "warn", priority = -1 }

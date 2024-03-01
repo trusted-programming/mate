@@ -11,54 +11,6 @@ use std::rc::Rc;
 
 fn main() {}
 
-#[derive(Debug, PartialEq)]
-struct Case {
-    uid: u32,
-    mode: u32,
-    priority: u32,
-}
-fn request_request_filter() {
-    let case = Case {
-        uid: 1,
-        mode: 10,
-        priority: 20,
-    };
-
-    let high_qos_cases = vec![
-        Case {
-            uid: 2,
-            mode: 15,
-            priority: 25,
-        },
-        Case {
-            uid: 1,
-            mode: 5,
-            priority: 30,
-        },
-        Case {
-            uid: 3,
-            mode: 20,
-            priority: 10,
-        },
-    ];
-
-    let mut down_grade_case = &case;
-    let mut swap_case_index_opt: Option<usize> = None;
-    (high_qos_cases.iter().enumerate())
-        .filter(|(i, swap_case)| {
-            down_grade_case.uid == swap_case.uid
-                && (down_grade_case.mode < swap_case.mode
-                    || down_grade_case.priority < swap_case.priority)
-        })
-        .for_each(|(i, swap_case)| {
-            down_grade_case = swap_case;
-            swap_case_index_opt = Some(i)
-        });
-
-    println!("Downgrade case: {:?}", down_grade_case);
-    println!("Swap case index: {:?}", swap_case_index_opt);
-}
-
 // // should parallelize
 // fn collect_at_end() {
 //     let people = vec![
