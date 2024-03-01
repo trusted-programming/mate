@@ -54,7 +54,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
         {
             let ty = cx.typeck_results().expr_ty(recv);
 
-            if check_implements_par_iter(cx, recv) && is_type_valid(cx, ty) {
+            if !check_implements_par_iter(cx, recv).is_empty() && is_type_valid(cx, ty) {
                 let mut top_expr = *recv;
 
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {

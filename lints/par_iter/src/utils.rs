@@ -9,7 +9,7 @@ use crate::constants::{TRAIT_PATHS, TRAIT_REF_PATHS};
 pub(crate) fn check_implements_par_iter<'tcx>(
     cx: &'tcx LateContext,
     expr: &'tcx hir::Expr<'_>,
-) -> bool {
+) -> Vec<hir::def_id::DefId> {
     let ty = cx.typeck_results().expr_ty(expr);
 
     let lt;
@@ -22,16 +22,23 @@ pub(crate) fn check_implements_par_iter<'tcx>(
         let static_region = cx.tcx.lifetimes.re_static;
         lt = GenericArg::from(static_region);
     }
+    let mut implemented_traits = Vec::new();
 
-    TRAIT_PATHS.iter().any(|path| {
-        get_trait_def_id(cx, path).map_or(false, |trait_def_id| {
-            implements_trait(cx, ty, trait_def_id, &[])
-        })
-    }) || TRAIT_REF_PATHS.iter().any(|path| {
-        get_trait_def_id(cx, path).map_or(false, |trait_def_id| {
-            implements_trait(cx, ty, trait_def_id, &[lt])
-        })
-    })
+    for trait_path in TRAIT_PATHS {
+        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path)
+            && implements_trait(cx, ty, trait_def_id, &[])
+        {
+            implemented_traits.push(trait_def_id);
+        }
+    }
+    for trait_path in TRAIT_REF_PATHS {
+        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path)
+            && implements_trait(cx, ty, trait_def_id, &[lt])
+        {
+            implemented_traits.push(trait_def_id);
+        }
+    }
+    implemented_traits
 }
 
 fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
