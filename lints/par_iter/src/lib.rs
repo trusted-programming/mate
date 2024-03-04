@@ -15,11 +15,12 @@ mod constants;
 mod utils;
 mod variable_check;
 
-use clippy_utils::{get_parent_expr, get_trait_def_id};
+use clippy_utils::mir::expr_local;
+use clippy_utils::{expr_use_ctxt, get_parent_expr, get_trait_def_id, ExprUseNode};
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::Visitor;
-use rustc_hir::{self as hir, ExprKind};
+use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{self, ty_kind::TyKind, Ty};
 use utils::{check_implements_par_iter, generate_suggestion, is_type_valid};
@@ -113,12 +114,13 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 
                 // TODO: this needs to change and find a better solutions for returns
                 if let TyKind::Adt(_, _) = ty.kind() {
-                    if let ExprKind::MethodCall(path_segment, _, _, _) = top_expr.kind {
-                        if path_segment.ident.as_str() != "collect" {
+                    if let Some(_local) = expr_local(cx.tcx, top_expr) {
+                        return;
+                    }
+                    if let Some(top_cx) = expr_use_ctxt(cx, top_expr) {
+                        if matches!(top_cx.node, ExprUseNode::Return(_)) {
                             return;
                         }
-                    } else {
-                        return;
                     }
                 }
 

@@ -50,5 +50,19 @@ error: found iterator that can be parallelized
 LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
    |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
 
-error: aborting due to 7 previous errors
+error: found iterator that can be parallelized
+  --> $DIR/main.rs:261:37
+   |
+LL |       let doubled_numbers: Vec<i32> = numbers
+   |  _____________________________________^
+LL | |         .into_iter()
+   | |____________________^
+   |
+help: try using a parallel iterator
+   |
+LL ~     let doubled_numbers: Vec<i32> = numbers
+LL +         .into_par_iter()
+   |
+
+error: aborting due to 8 previous errors
 

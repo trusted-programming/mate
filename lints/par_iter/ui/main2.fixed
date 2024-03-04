@@ -11,28 +11,6 @@ use std::rc::Rc;
 
 fn main() {}
 
-// // should parallelize
-// fn collect_at_end() {
-//     let people = vec![
-//         Person {
-//             name: "Alice".to_string(),
-//             age: 25,
-//         },
-//         Person {
-//             name: "Bob".to_string(),
-//             age: 35,
-//         },
-//         Person {
-//             name: "Carol".to_string(),
-//             age: 32,
-//         },
-//     ];
-
-//     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
-
-//     println!("{:?}", names);
-// }
-
 // // 1st should parallelize, 2nd no
 // fn multiple_iter_one_chain() {
 //     let people = vec![
@@ -89,31 +67,6 @@ fn main() {}
 //         .for_each(|x| {
 //             println!("{x}");
 //         });
-// }
-
-// // should parallelize
-// fn mut_var_declared_in_closure() {
-//     let numbers = vec![1, 2, 3, 4, 5];
-//     let doubled_numbers: Vec<i32> = numbers
-//         .into_iter()
-//         .map(|num| {
-//             let mut doubled = num * 2; // Mutable variable inside the closure
-//             doubled += 1; // Modify the mutable variable
-//             doubled // Return the modified value
-//         })
-//         .collect();
-//     println!("{:?}", doubled_numbers);
-// }
-
-// // no
-// fn simple_fold() {
-//     let sum;
-//     let numbers = vec![1, 2, 3, 4, 5];
-//     sum = numbers.iter().map(|&num| num).fold(0, |mut sum, v| {
-//         sum += v;
-//         sum
-//     });
-//     println!("Sum: {}", sum);
 // }
 
 // // should parallelize

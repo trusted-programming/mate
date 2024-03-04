@@ -254,3 +254,17 @@ fn collect_at_end() {
 
     println!("{:?}", names);
 }
+
+// should parallelize
+fn mut_var_declared_in_closure() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    let doubled_numbers: Vec<i32> = numbers
+        .into_iter()
+        .map(|num| {
+            let mut doubled = num * 2; // Mutable variable inside the closure
+            doubled += 1; // Modify the mutable variable
+            doubled // Return the modified value
+        })
+        .collect();
+    println!("{:?}", doubled_numbers);
+}
