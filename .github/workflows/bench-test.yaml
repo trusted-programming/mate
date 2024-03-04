@@ -34,9 +34,9 @@ jobs:
         with:
           path: |
             ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ matrix.project }}-v1
+          key: ${{ runner.os }}-cargo-${{ matrix.project }}-v2
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.project }}-v1
+            ${{ runner.os }}-cargo-${{ matrix.project }}-v2
             ${{ runner.os }}-cargo-${{ matrix.project }}-
             ${{ runner.os }}-cargo-
 
