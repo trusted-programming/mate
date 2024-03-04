@@ -19,7 +19,7 @@ use clippy_utils::{get_parent_expr, get_trait_def_id};
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::Visitor;
-use rustc_hir::{self as hir};
+use rustc_hir::{self as hir, ExprKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{self, ty_kind::TyKind, Ty};
 use utils::{check_implements_par_iter, generate_suggestion, is_type_valid};
@@ -113,7 +113,13 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 
                 // TODO: this needs to change and find a better solutions for returns
                 if let TyKind::Adt(_, _) = ty.kind() {
-                    return;
+                    if let ExprKind::MethodCall(path_segment, _, _, _) = top_expr.kind {
+                        if path_segment.ident.as_str() != "collect" {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
                 }
 
                 let mut validator = Validator { cx, is_valid: true };
