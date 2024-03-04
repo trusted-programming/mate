@@ -205,10 +205,19 @@ pub fn complex_long_chain() {
         });
 }
 
+// should parallelize
 fn enumerate_par_iter() {
     let numbers = vec![1, 2, 3, 4, 5];
 
     numbers.par_iter().enumerate().for_each(|t| {
+        dbg!(t);
+    });
+}
+
+// no
+fn non_allowed_method() {
+    let numbers = vec![1, 2, 3];
+    numbers.iter().cycle().enumerate().take(10).for_each(|t| {
         dbg!(t);
     });
 }

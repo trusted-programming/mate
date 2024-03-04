@@ -39,7 +39,7 @@ LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:211:5
+  --> $DIR/main.rs:212:5
    |
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
