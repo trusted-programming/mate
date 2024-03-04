@@ -24,6 +24,10 @@ rustc_private = true
 [features]
 rlib = ["dylint_linting/constituent"]
 
+[[example]]
+name = "fold_main"
+path = "ui/main.rs"
+
 [lints.clippy]
 # GROUPS
 perf = { level = "warn", priority = -1 }

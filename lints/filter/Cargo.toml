@@ -23,6 +23,10 @@ rustc_private = true
 [features]
 rlib = ["dylint_linting/constituent"]
 
+[[example]]
+name = "filter_main"
+path = "ui/main.rs"
+
 [lints.clippy]
 # GROUPS
 perf = { level = "warn", priority = -1 }
