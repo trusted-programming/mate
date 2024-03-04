@@ -221,3 +221,14 @@ fn non_allowed_method() {
         dbg!(t);
     });
 }
+
+// no
+fn simple_fold() {
+    let sum;
+    let numbers = vec![1, 2, 3, 4, 5];
+    sum = numbers.iter().map(|&num| num).fold(0, |mut sum, v| {
+        sum += v;
+        sum
+    });
+    println!("Sum: {}", sum);
+}
