@@ -27,6 +27,16 @@ struct Case {
     priority: u32,
 }
 
+#[derive(Clone)]
+struct QosCase {
+    uid: u64, // Identifier for the Quality of Service case
+}
+
+struct ApplicationState {
+    foreground_high_qos_cases: Vec<QosCase>,
+    background_high_qos_cases: Vec<QosCase>,
+}
+
 fn main() {}
 
 // should parallelize
@@ -317,4 +327,16 @@ fn request_request_filter() {
 
     println!("Downgrade case: {:?}", down_grade_case);
     println!("Swap case index: {:?}", swap_case_index_opt);
+}
+
+// no
+impl ApplicationState {
+    fn transition_to_background(&mut self, target_uid: u64) {
+        let change_state_cases = self
+            .background_high_qos_cases
+            .iter()
+            .cloned()
+            .filter(|case| case.uid == target_uid);
+        self.foreground_high_qos_cases.extend(change_state_cases);
+    }
 }

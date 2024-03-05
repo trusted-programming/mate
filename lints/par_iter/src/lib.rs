@@ -23,7 +23,8 @@ use rustc_hir::intravisit::Visitor;
 use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{self, ty_kind::TyKind, Ty};
-use utils::{check_implements_par_iter, generate_suggestion, is_type_valid};
+use rustc_span::sym;
+use utils::{check_implements_par_iter, check_trait_impl, generate_suggestion, is_type_valid};
 use variable_check::check_variables;
 
 dylint_linting::declare_late_lint! {
@@ -111,6 +112,10 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 }
 
                 let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+                // TODO: find a way to deal with iterators returns
+                if check_trait_impl(cx, ty, sym::Iterator) {
+                    return;
+                }
 
                 // TODO: this needs to change and find a better solutions for returns
                 if let TyKind::Adt(_, _) = ty.kind() {

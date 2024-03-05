@@ -1,5 +1,5 @@
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:34:5
+  --> $DIR/main.rs:44:5
    |
 LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..100).into_par_iter()`
@@ -8,7 +8,7 @@ LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    = help: to override `-D warnings` add `#[allow(par_iter)]`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:58:5
+  --> $DIR/main.rs:68:5
    |
 LL | /     (0..100)
 LL | |         .into_iter()
@@ -21,37 +21,37 @@ LL +         .into_par_iter()
    |
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:93:5
+  --> $DIR/main.rs:103:5
    |
 LL |     list.into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:109:5
+  --> $DIR/main.rs:119:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:192:5
+  --> $DIR/main.rs:202:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:219:5
+  --> $DIR/main.rs:229:5
    |
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:260:30
+  --> $DIR/main.rs:270:30
    |
 LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
    |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
 
 error: found iterator that can be parallelized
-  --> $DIR/main.rs:268:37
+  --> $DIR/main.rs:278:37
    |
 LL |       let doubled_numbers: Vec<i32> = numbers
    |  _____________________________________^
