@@ -85,3 +85,39 @@ fn main() {}
 // pub fn iter_returned_in_variable() {
 //     let _: Range<i32> = (0..100).into_iter();
 // }
+
+// // should parallelize
+// fn mut_var_declared_in_closure() {
+//     let numbers = vec![1, 2, 3, 4, 5];
+//     let doubled_numbers: Vec<i32> = numbers
+//         .into_iter()
+//         .map(|num| {
+//             let mut doubled = num * 2; // Mutable variable inside the closure
+//             doubled += 1; // Modify the mutable variable
+//             doubled // Return the modified value
+//         })
+//         .collect();
+//     println!("{:?}", doubled_numbers);
+// }
+//
+// // should parallelize
+// fn collect_at_end() {
+//     let people = vec![
+//         Person {
+//             name: "Alice".to_string(),
+//             age: 25,
+//         },
+//         Person {
+//             name: "Bob".to_string(),
+//             age: 35,
+//         },
+//         Person {
+//             name: "Carol".to_string(),
+//             age: 32,
+//         },
+//     ];
+
+//     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
+
+//     println!("{:?}", names);
+// }
