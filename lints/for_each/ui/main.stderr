@@ -1,5 +1,5 @@
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:41:5
+  --> $DIR/main.rs:35:5
    |
 LL | /     for x in 1..=100 {
 LL | |         println!("{x}");
@@ -16,7 +16,7 @@ LL +     });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:50:5
+  --> $DIR/main.rs:44:5
    |
 LL | /     for a in vec_a {
 LL | |         if a == 1 {
@@ -37,7 +37,7 @@ LL +     });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:76:9
+  --> $DIR/main.rs:70:9
    |
 LL | /         for b in &vec_b {
 LL | |             dbg!(a, b);
@@ -52,7 +52,7 @@ LL +         });
    |
 
 error: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:85:5
+  --> $DIR/main.rs:79:5
    |
 LL | /     for _ in 0..some_num.len() {
 LL | |         let (_, upload_size) = (true, 99);

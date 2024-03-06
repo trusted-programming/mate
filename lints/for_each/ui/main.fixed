@@ -1,13 +1,7 @@
 // run-rustfix
+#![allow(dead_code, unused_imports, unused_variables)]
 
-fn main() {
-    build_request_builder();
-    just_loop();
-    loop_continue();
-    nested_loop();
-    loop_break();
-    get_upload_file_total_size();
-}
+fn main() {}
 
 struct MyBuilder {
     headers: Vec<(String, String)>,
@@ -87,6 +81,18 @@ fn get_upload_file_total_size() -> u64 {
         file_total_size += upload_size;
     });
     file_total_size
+}
+
+// no
+fn return_loop() {
+    let num_workers = 10;
+    let locals = vec![1, 2, 3, 4, 5];
+    for index in 0..num_workers {
+        let item = locals.get(index);
+        if !item.is_some() {
+            return;
+        }
+    }
 }
 
 // TODO: double capture
