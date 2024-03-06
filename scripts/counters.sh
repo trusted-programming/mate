@@ -3,16 +3,18 @@
 suffix=$1
 
 #!/bin/bash
-rs_files=($(find -L . -type d -name target -prune -o -type f -name '*.rs' -print))
+rs_files=($(find -L . -type d \( -name target -o -name benches -o -name bench -o -name tests -o -name test \) -prune -o -type f -name '*.rs' -print | grep -vE "/benches?/|/bench/|/tests?/"))
 
-for_loop_count=0
 echo "### COUNTING FOR LOOPS ###"
+for_loop_count=0 # Initialize total count
 for file in "${rs_files[@]}"; do
     echo "Checking: $file"
-    for_loop_count_in_file=$(grep -oE 'for\s+(\([^)]+\)|\w+)\s+in\s+[^{]+' "$file" | wc -l)
+    # First, use grep to exclude comment lines, then count for loops
+    for_loop_count_in_file=$(grep -vE '^\s*(//|/\*|\*/)' "$file" | grep -oE 'for\s+(\([^)]+\)|\w+)\s+in\s+[^{]+' | wc -l)
     echo "Count in file: $for_loop_count_in_file"
     ((for_loop_count += for_loop_count_in_file))
 done
+echo "Total for loop count: $for_loop_count"
 
 iter_count=0
 iter_mut_count=0
