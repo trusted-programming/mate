@@ -8,7 +8,7 @@ echo
 echo "### FILE OUTPUT ###"
 echo
 
-dylint_output=$(cargo dylint --workspace --all -- --exclude tests --exclude benches 2>&1)
+dylint_output=$(cargo dylint --workspace --all -- --lib --bins 2>&1)
 
 echo "$dylint_output"
 echo

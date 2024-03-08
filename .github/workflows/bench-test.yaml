@@ -27,7 +27,7 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           retry_on: error
-          command: git clone --branch OpenHarmony-v4.1-Beta1 https://gitee.com/openharmony/${{ matrix.project }}.git
+          command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
 
       - name: Cache Cargo dependencies and binaries
         uses: actions/cache@v4
@@ -57,7 +57,7 @@ jobs:
         continue-on-error: true
         run: |
           for i in {1..5}; do
-            cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib
+            cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib --bins
           done
 
       - name: cargo check
