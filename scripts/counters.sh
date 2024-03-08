@@ -1,82 +1,40 @@
 #!/bin/bash
 
 suffix=$1
+# Find and replace the string in Cargo.toml
+sed -i.bak 's|https://github.com/trusted-programming/mate|https://github.com/trusted-programming/count_loop|' Cargo.toml
 
-#!/bin/bash
-rs_files=($(find -L . -type d \( -name target -o -name benches -o -name bench -o -name tests -o -name test \) -prune -o -type f -name '*.rs' -print | grep -vE "/benches?/|/bench/|/tests?/"))
+echo
+echo "### FILE OUTPUT ###"
+echo
 
-echo "### COUNTING FOR LOOPS ###"
-for_loop_count=0 # Initialize total count
-for file in "${rs_files[@]}"; do
-    echo "Checking: $file"
-    # First, use grep to exclude comment lines, then count for loops
-    for_loop_count_in_file=$(grep -vE '^\s*(//|/\*|\*/)' "$file" | grep -oE 'for\s+(\([^)]+\)|\w+)\s+in\s+[^{]+' | wc -l)
-    echo "Count in file: $for_loop_count_in_file"
-    ((for_loop_count += for_loop_count_in_file))
-done
-echo "Total for loop count: $for_loop_count"
+if ! dylint_output=$(cargo dylint --workspace --all 2>&1); then
+    echo "Error running cargo dylint" >&2
+    exit 1
+fi
 
-iter_count=0
-iter_mut_count=0
-into_iter_count=0
+echo "$dylint_output"
+echo
+echo "### FILE OUTPUT END ###"
 
-echo "### COUNTING ITERS ###"
-for file in "${rs_files[@]}"; do
-    echo "Checking: $file"
-    iter_count_in_file=$(grep -oE '\.iter\(\)' "$file" | wc -l)
-    iter_mut_count_in_file=$(grep -oE '\.iter_mut\(\)' "$file" | wc -l)
-    into_iter_count_in_file=$(grep -oE '\.into_iter\(\)' "$file" | wc -l)
-    echo "iter_count_in_file: $iter_count_in_file"
-    echo "iter_mut_count_in_file: $iter_mut_count_in_file"
-    echo "into_iter_count_in_file: $into_iter_count_in_file"
 
-    ((iter_count += iter_count_in_file))
-    ((iter_mut_count += iter_mut_count_in_file))
-    ((into_iter_count += into_iter_count_in_file))
-done
-general_iter_count=$((iter_count + iter_mut_count + into_iter_count))
-
-par_iter_count=0
-into_par_iter_count=0
-par_iter_mut_count=0
-
-echo "### COUNTING PAR ITERS ###"
-for file in "${rs_files[@]}"; do
-    echo "Checking: $file"
-    par_iter_count_in_file=$(grep -oE '\.par_iter\(\)' "$file" | wc -l)
-    into_par_iter_count_in_file=$(grep -oE '\.into_par_iter\(\)' "$file" | wc -l)
-    par_iter_mut_count_in_file=$(grep -oE '\.par_iter_mut\(\)' "$file" | wc -l)
-    echo "par_iter_count_in_file: $par_iter_count_in_file"
-    echo "into_par_iter_count_in_file: $into_par_iter_count_in_file"
-    echo "par_iter_mut_count_in_file: $par_iter_mut_count_in_file"
-    ((par_iter_count += par_iter_count_in_file))
-    ((into_par_iter_count += into_par_iter_count_in_file))
-    ((par_iter_mut_count += par_iter_mut_count_in_file))
-done
-par_iter_total_count=$((par_iter_count + into_par_iter_count + par_iter_mut_count))
+for_loop_count=$(echo "$dylint_output" | grep -c "warning: found for loop, code: 213423")
+iter_count=$(echo "$dylint_output" | grep -c "warning: found iterator, code: 213932")
+par_iter_count=$(echo "$dylint_output" | grep -c "warning: found par iterator, code: 213312")
 
 echo
 echo "### FINAL RESULTS ###"
 echo
 echo "for loop occurrences: $for_loop_count"
-echo ".iter() occurrences: $iter_count"
-echo ".iter_mut() occurrences: $iter_mut_count"
-echo ".into_iter() occurrences: $into_iter_count"
-echo "Total .iter*() occurrences: $general_iter_count"
-echo ".par_iter() occurrences: $par_iter_count"
-echo ".into_par_iter() occurrences: $into_par_iter_count"
-echo ".par_iter_mut() occurrences: $par_iter_mut_count"
-echo "Total .par_iter*() occurrences: $par_iter_total_count"
+echo "Total iter occurrences: $iter_count"
+echo "Total par iter occurrences: $par_iter_count"
 echo
 echo "### ALL DONE ###"
 
 # Echo the variables with the suffix to set them in the GitHub environment
 echo "for_loop_count_${suffix}=$for_loop_count" >>$GITHUB_ENV
 echo "iter_count_${suffix}=$iter_count" >>$GITHUB_ENV
-echo "iter_mut_count_${suffix}=$iter_mut_count" >>$GITHUB_ENV
-echo "into_iter_count_${suffix}=$into_iter_count" >>$GITHUB_ENV
-echo "general_iter_count_${suffix}=$((iter_count + iter_mut_count + into_iter_count))" >>$GITHUB_ENV
 echo "par_iter_count_${suffix}=$par_iter_count" >>$GITHUB_ENV
-echo "into_par_iter_count_${suffix}=$into_par_iter_count" >>$GITHUB_ENV
-echo "par_iter_mut_count_${suffix}=$par_iter_mut_count" >>$GITHUB_ENV
-echo "par_iter_total_count_${suffix}=$((par_iter_count + into_par_iter_count + par_iter_mut_count))" >>$GITHUB_ENV
+
+# Change the string back in Cargo.toml
+mv Cargo.toml.bak Cargo.toml

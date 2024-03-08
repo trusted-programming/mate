@@ -40,17 +40,17 @@ jobs:
             ${{ runner.os }}-cargo-${{ matrix.project }}-
             ${{ runner.os }}-cargo-
 
-      - name: count occurrences before
-        working-directory: ./${{ matrix.project }}
-        run: |
-          curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/counters.sh
-          bash counters.sh before
-
       - name: prepare repository for dylint
         working-directory: ./${{ matrix.project }}
         run: |
           curl -o prepare_repo.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/prepare_repo.sh
           bash prepare_repo.sh
+
+      - name: count occurrences before
+        working-directory: ./${{ matrix.project }}
+        run: |
+          curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/${GITHUB_REF##*/}/scripts/counters.sh
+          bash counters.sh before
 
       - name: Lint fix (run 5 times)
         working-directory: ./${{ matrix.project }}
@@ -77,6 +77,8 @@ jobs:
       - name: Calculate and print differences
         if: always()
         run: |
+          echo "TOTAL OVERVIEW OF RESULTS"
+          echo ""
           echo "For loop count before: $for_loop_count_before"
           echo "For loop count after: $for_loop_count_after"
           echo "For loop count difference: $((for_loop_count_after - for_loop_count_before))"
@@ -85,39 +87,6 @@ jobs:
           echo "Iter count after: $iter_count_after"
           echo "Iter count difference: $((iter_count_after - iter_count_before))"
           echo ""
-          echo "Iter mut count before: $iter_mut_count_before"
-          echo "Iter mut count after: $iter_mut_count_after"
-          echo "Iter mut count difference: $((iter_mut_count_after - iter_mut_count_before))"
-          echo ""
-          echo "Into iter count before: $into_iter_count_before"
-          echo "Into iter count after: $into_iter_count_after"
-          echo "Into iter count difference: $((into_iter_count_after - into_iter_count_before))"
-          echo ""
-          general_iter_count_before=$((iter_count_before + iter_mut_count_before + into_iter_count_before))
-          general_iter_count_after=$((iter_count_after + iter_mut_count_after + into_iter_count_after))
-          echo "Total .iter*() count before: $general_iter_count_before"
-          echo "Total .iter*() count after: $general_iter_count_after"
-          echo "Total .iter*() count difference: $((general_iter_count_after - general_iter_count_before))"
-          echo ""
           echo "Par iter count before: $par_iter_count_before"
           echo "Par iter count after: $par_iter_count_after"
           echo "Par iter count difference: $((par_iter_count_after - par_iter_count_before))"
-          echo ""
-          echo "Into par iter count before: $into_par_iter_count_before"
-          echo "Into par iter count after: $into_par_iter_count_after"
-          echo "Into par iter count difference: $((into_par_iter_count_after - into_par_iter_count_before))"
-          echo ""
-          echo "Par iter mut count before: $par_iter_mut_count_before"
-          echo "Par iter mut count after: $par_iter_mut_count_after"
-          echo "Par iter mut count difference: $((par_iter_mut_count_after - par_iter_mut_count_before))"
-          echo ""
-          par_iter_total_count_before=$((par_iter_count_before + into_par_iter_count_before + par_iter_mut_count_before))
-          par_iter_total_count_after=$((par_iter_count_after + into_par_iter_count_after + par_iter_mut_count_after))
-          echo "Total .par_iter*() count before: $par_iter_total_count_before"
-          echo "Total .par_iter*() count after: $par_iter_total_count_after"
-          echo "Total .par_iter*() count difference: $((par_iter_total_count_after - par_iter_total_count_before))"
-          echo ""
-          echo "TOTAL OVERVIEW OF RESULTS"
-          echo "For loop count difference: $((for_loop_count_after - for_loop_count_before))"
-          echo "Total .iter*() count difference: $((general_iter_count_after - general_iter_count_before))"
-          echo "Total .par_iter*() count difference: $((par_iter_total_count_after - par_iter_total_count_before))"
