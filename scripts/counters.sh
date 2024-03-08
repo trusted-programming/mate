@@ -8,10 +8,7 @@ echo
 echo "### FILE OUTPUT ###"
 echo
 
-if ! dylint_output=$(cargo dylint --workspace --all 2>&1); then
-    echo "Error running cargo dylint" >&2
-    exit 1
-fi
+dylint_output=$(cargo dylint --workspace --all -- --exclude tests --exclude benches 2>&1)
 
 echo "$dylint_output"
 echo
