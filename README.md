@@ -50,7 +50,7 @@ prerequisites: - rustup - latest version of rust stable if not run `rustup updat
    ```toml
    [workspace.metadata.dylint]
    libraries = [
-       { git = "https://github.com/trusted-programming/cargo-mate"},
+       { git = "https://github.com/trusted-programming/mate"},
    ]
    ```
 
