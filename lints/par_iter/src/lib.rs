@@ -12,7 +12,6 @@ extern crate rustc_middle;
 extern crate rustc_span;
 
 mod constants;
-mod utils;
 mod variable_check;
 
 use clippy_utils::{get_parent_expr, get_trait_def_id};
@@ -23,8 +22,10 @@ use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{self, ty_kind::TyKind, Ty};
 use rustc_span::sym;
-use utils::{check_implements_par_iter, check_trait_impl, generate_suggestion, is_type_valid};
-use variable_check::check_variables;
+use variable_check::{
+    check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
+    is_type_valid,
+};
 
 dylint_linting::declare_late_lint! {
     /// ### What it does
@@ -67,35 +68,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 allowed_methods.insert("into_iter");
                 allowed_methods.insert("iter");
                 allowed_methods.insert("iter_mut");
-
-                if let Some(parallel_iterator_def_id) =
-                    get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"])
-                    && let Some(parallel_indexed_iterator_def_id) =
-                        get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"])
-                {
-                    let parallel_iterator_associated_items =
-                        cx.tcx.associated_items(parallel_iterator_def_id);
-                    // Filter out only methods from the associated items
-                    let parallel_iterator_methods: Vec<_> = parallel_iterator_associated_items
-                        .in_definition_order()
-                        .filter(|item| matches!(item.kind, ty::AssocKind::Fn))
-                        .map(|item| item.name.as_str())
-                        .collect();
-
-                    let parallel_indexed_iterator_associated_items =
-                        cx.tcx.associated_items(parallel_indexed_iterator_def_id);
-                    // Filter out only methods from the associated items
-                    let parallel_indexed_iterator_methods: Vec<_> =
-                        parallel_indexed_iterator_associated_items
-                            .in_definition_order()
-                            .filter(|item| matches!(item.kind, ty::AssocKind::Fn))
-                            .map(|item| item.name.as_str())
-                            .collect();
-                    allowed_methods.extend(parallel_iterator_methods);
-                    allowed_methods.extend(parallel_indexed_iterator_methods);
-                } else {
-                    return;
-                }
+                allowed_methods.extend(get_methods(cx));
 
                 let mut top_expr = *recv;
 
@@ -164,6 +137,27 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
             }
         }
     }
+}
+
+fn get_methods<'tcx>(cx: &LateContext<'tcx>) -> Vec<&'tcx str> {
+    let mut res = Vec::new();
+    if let (Some(parallel_iterator_def_id), Some(parallel_indexed_iterator_def_id)) = (
+        get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"]),
+        get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"]),
+    ) {
+        let ids = &[parallel_iterator_def_id, parallel_indexed_iterator_def_id];
+        for def_id in ids {
+            let associated_items = cx.tcx.associated_items(def_id);
+            // Filter out only methods from the associated items
+            let methods: Vec<&str> = associated_items
+                .in_definition_order()
+                .filter(|item| matches!(item.kind, ty::AssocKind::Fn))
+                .map(|item| item.name.as_str())
+                .collect();
+            res.extend(methods);
+        }
+    }
+    res
 }
 
 #[test]
