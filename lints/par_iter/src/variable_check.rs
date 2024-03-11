@@ -9,11 +9,14 @@ use rustc_lint::LateContext;
 use rustc_middle::{
     hir::map::associated_body,
     mir::FakeReadCause,
-    ty::{self, TyCtxt, UpvarId, UpvarPath},
+    ty::{self, Ty, TyCtxt, UpvarId, UpvarPath},
 };
+
+use crate::utils::is_type_valid;
 
 pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
     mutably_used_vars: hir::HirIdSet,
+    all_vars: FxHashSet<Ty<'tcx>>,
     prev_bind: Option<hir::HirId>,
     /// In async functions, the inner AST is composed of multiple layers until we reach the code
     /// defined by the user. Because of that, some variables are marked as mutably borrowed even
@@ -31,10 +34,13 @@ pub(crate) fn check_variables<'tcx>(
     body: &hir::Body<'tcx>,
 ) -> bool {
     let MutablyUsedVariablesCtxt {
-        mutably_used_vars, ..
+        mutably_used_vars,
+        all_vars,
+        ..
     } = {
         let mut ctx = MutablyUsedVariablesCtxt {
             mutably_used_vars: hir::HirIdSet::default(),
+            all_vars: FxHashSet::default(),
             prev_bind: None,
             prev_move_to_closure: hir::HirIdSet::default(),
             aliases: hir::HirIdMap::default(),
@@ -66,7 +72,12 @@ pub(crate) fn check_variables<'tcx>(
 
         ctx
     };
-    mutably_used_vars.is_empty()
+    let mut res = true;
+    for ty in all_vars {
+        res &= is_type_valid(cx, ty);
+    }
+    res &= mutably_used_vars.is_empty();
+    res
 }
 
 pub(crate) fn check_closures<'tcx>(
@@ -153,6 +164,7 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
             ..
         } = &cmt.place
         {
+            self.all_vars.insert(*base_ty);
             if let Some(bind_id) = self.prev_bind.take() {
                 if bind_id != *vid {
                     self.add_alias(bind_id, *vid);
@@ -186,6 +198,8 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
             ..
         } = &cmt.place
         {
+            self.all_vars.insert(*base_ty);
+
             // If this is a mutable borrow, it was obviously used mutably so we add it. However
             // for `UniqueImmBorrow`, it's interesting because if you do: `array[0] = value` inside
             // a closure, it'll return this variant whereas if you have just an index access, it'll
@@ -231,9 +245,11 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
                     var_path: UpvarPath { hir_id: vid },
                     ..
                 }),
+            base_ty,
             ..
         } = &cmt.place
         {
+            self.all_vars.insert(*base_ty);
             self.add_mutably_used_var(*vid);
         }
     }
@@ -268,9 +284,12 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
                     var_path: UpvarPath { hir_id: vid },
                     ..
                 }),
+            base_ty,
             ..
         } = &cmt.place
         {
+            self.all_vars.insert(*base_ty);
+
             if let FakeReadCause::ForLet(Some(inner)) = cause {
                 // Seems like we are inside an async function. We need to store the closure `DefId`
                 // to go through it afterwards.
@@ -291,9 +310,11 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
                     var_path: UpvarPath { hir_id: vid },
                     ..
                 }),
+            base_ty,
             ..
         } = &cmt.place
         {
+            self.all_vars.insert(*base_ty);
             if self.is_in_unsafe_block(id) {
                 self.add_mutably_used_var(*vid);
             }

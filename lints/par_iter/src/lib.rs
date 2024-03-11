@@ -149,74 +149,6 @@ struct Validator<'a, 'tcx> {
     is_valid: bool,
 }
 
-struct ExprVisitor<'a, 'tcx> {
-    cx: &'a LateContext<'tcx>,
-    is_valid: bool,
-}
-
-impl<'a, 'tcx> hir::intravisit::Visitor<'_> for ExprVisitor<'a, 'tcx> {
-    fn visit_qpath(
-        &mut self,
-        qpath: &'_ hir::QPath<'_>,
-        id: hir::HirId,
-        _span: rustc_span::Span,
-    ) -> Self::Result {
-        if !self.is_valid {
-            return;
-        }
-        if let hir::def::Res::Local(hir_id) = self.cx.typeck_results().qpath_res(qpath, id) {
-            if let hir::Node::Local(l) = self.cx.tcx.parent_hir_node(hir_id) {
-                self.visit_local(l)
-            }
-        }
-    }
-    fn visit_local(&mut self, l: &'_ hir::Local<'_>) -> Self::Result {
-        if !self.is_valid {
-            return;
-        }
-        if let Some(expr) = l.init {
-            self.is_valid &= is_type_valid(
-                self.cx,
-                self.cx.tcx.typeck(expr.hir_id.owner).node_type(expr.hir_id),
-            );
-            hir::intravisit::walk_expr(self, expr)
-        }
-    }
-    fn visit_block(&mut self, b: &'_ hir::Block<'_>) -> Self::Result {
-        if !self.is_valid {
-            return;
-        }
-        for stmt in b.stmts {
-            self.visit_stmt(stmt);
-        }
-    }
-    fn visit_stmt(&mut self, s: &'_ hir::Stmt<'_>) -> Self::Result {
-        if !self.is_valid {
-            return;
-        }
-        match s.kind {
-            hir::StmtKind::Expr(e) | hir::StmtKind::Semi(e) => self.visit_expr(e),
-            hir::StmtKind::Item(_) => {}
-            hir::StmtKind::Local(l) => self.visit_local(l),
-        }
-    }
-
-    fn visit_expr(&mut self, ex: &hir::Expr) {
-        if !self.is_valid {
-            return;
-        }
-        if let hir::ExprKind::Closure(closure) = ex.kind {
-            let body = self.cx.tcx.hir().body(closure.body);
-            if let hir::Node::Expr(expr) = self.cx.tcx.hir_node(closure.body.hir_id) {
-                self.is_valid &= check_variables(self.cx, closure.def_id, body);
-                self.visit_expr(expr);
-            }
-        } else {
-            hir::intravisit::walk_expr(self, ex);
-        }
-    }
-}
-
 impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
     fn visit_expr(&mut self, ex: &hir::Expr) {
         if let hir::ExprKind::MethodCall(_method_name, _receiver, args, _span) = ex.kind {
@@ -224,13 +156,11 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
                 return;
             }
             for arg in args {
-                let mut expr_visitor = ExprVisitor {
-                    cx: self.cx,
-                    is_valid: true,
-                };
+                if let hir::ExprKind::Closure(closure) = arg.kind {
+                    let body = self.cx.tcx.hir().body(closure.body);
 
-                expr_visitor.visit_expr(arg);
-                self.is_valid &= expr_visitor.is_valid;
+                    self.is_valid &= check_variables(self.cx, closure.def_id, body);
+                }
             }
         }
     }
