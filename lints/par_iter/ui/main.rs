@@ -302,3 +302,50 @@ impl ApplicationState {
         self.foreground_high_qos_cases.extend(change_state_cases);
     }
 }
+
+// should parallelize
+fn collect_at_end() {
+    let people = vec![
+        Person {
+            name: "Alice".to_string(),
+            age: 25,
+        },
+        Person {
+            name: "Bob".to_string(),
+            age: 35,
+        },
+        Person {
+            name: "Carol".to_string(),
+            age: 32,
+        },
+    ];
+
+    let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
+
+    println!("{:?}", names);
+}
+
+struct Tsize {
+    send: usize,
+}
+
+impl Tsize {
+    fn to_no_send(&self) -> TsizeNoSend {
+        TsizeNoSend {
+            no_send: Rc::new(self.send),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct TsizeNoSend {
+    no_send: Rc<usize>,
+}
+
+// no
+fn collect_at_end_no_par() {
+    let t_size_vec: Vec<Tsize> = vec![Tsize { send: 32 }, Tsize { send: 42 }];
+    let t_size_vec_no_send: Vec<TsizeNoSend> = t_size_vec.iter().map(|t| t.to_no_send()).collect();
+
+    println!("{:?}", t_size_vec_no_send);
+}

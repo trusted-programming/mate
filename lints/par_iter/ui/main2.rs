@@ -100,24 +100,3 @@ fn main() {}
 //     println!("{:?}", doubled_numbers);
 // }
 //
-// // should parallelize
-// fn collect_at_end() {
-//     let people = vec![
-//         Person {
-//             name: "Alice".to_string(),
-//             age: 25,
-//         },
-//         Person {
-//             name: "Bob".to_string(),
-//             age: 35,
-//         },
-//         Person {
-//             name: "Carol".to_string(),
-//             age: 32,
-//         },
-//     ];
-
-//     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
-
-//     println!("{:?}", names);
-// }

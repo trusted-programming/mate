@@ -17,16 +17,15 @@ mod variable_check;
 use clippy_utils::{get_parent_expr, get_trait_def_id};
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
-use rustc_hir::intravisit::Visitor;
+use rustc_hir::intravisit::{walk_expr, Visitor};
 use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::{self, ty_kind::TyKind, Ty};
+use rustc_middle::ty::{self, Ty};
 use rustc_span::sym;
 use variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
     is_type_valid,
 };
-
 dylint_linting::declare_late_lint! {
     /// ### What it does
     /// parallelize iterators using rayon
@@ -89,11 +88,6 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                     return;
                 }
 
-                // TODO: this needs to change and find a better solutions for returns
-                if let TyKind::Adt(_, _) = ty.kind() {
-                    return;
-                }
-
                 let mut validator = Validator { cx, is_valid: true };
                 validator.visit_expr(top_expr);
                 if !validator.is_valid {
@@ -128,14 +122,17 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
             if !self.is_valid {
                 return;
             }
+            let ex_ty = self.cx.typeck_results().expr_ty(ex);
+            self.is_valid &= is_type_valid(self.cx, ex_ty);
+
             for arg in args {
                 if let hir::ExprKind::Closure(closure) = arg.kind {
                     let body = self.cx.tcx.hir().body(closure.body);
-
                     self.is_valid &= check_variables(self.cx, closure.def_id, body);
                 }
             }
         }
+        walk_expr(self, ex)
     }
 }
 

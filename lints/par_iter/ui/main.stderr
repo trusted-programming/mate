@@ -44,5 +44,11 @@ error: found iterator that can be parallelized
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
 
-error: aborting due to 6 previous errors
+error: found iterator that can be parallelized
+  --> $DIR/main.rs:323:30
+   |
+LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
+   |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
+
+error: aborting due to 7 previous errors
 
