@@ -1,5 +1,5 @@
 error: implicit fold
-  --> $DIR/main.rs:13:5
+  --> $DIR/main.rs:11:5
    |
 LL | /     numbers.iter().for_each(|&num| {
 LL | |         sum += num;
@@ -10,29 +10,7 @@ LL | |     });
    = help: to override `-D warnings` add `#[allow(fold_simple)]`
 
 error: implicit fold
-  --> $DIR/main.rs:23:5
-   |
-LL | /     numbers.iter().for_each(|&num| {
-LL | |         data.push(num * 3);
-LL | |     });
-   | |______^ help: try using `fold` instead: `data = numbers.iter().fold(data, |mut data, &num| {  data.push(num * 3); data })`
-   |
-   = note: `-D fold-vec` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(fold_vec)]`
-
-error: implicit fold
-  --> $DIR/main.rs:35:5
-   |
-LL | /     numbers.iter().for_each(|&num| {
-LL | |         data.insert(num, num.to_string());
-LL | |     });
-   | |______^ help: try using `fold` instead: `data = numbers.iter().fold(data, |mut data, &num| {  data.insert(num, num.to_string()); data })`
-   |
-   = note: `-D fold-hashmap` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(fold_hashmap)]`
-
-error: implicit fold
-  --> $DIR/main.rs:45:5
+  --> $DIR/main.rs:21:5
    |
 LL | /     (0..some_num.len()).into_iter().for_each(|_| {
 LL | |         let (_, upload_size) = (true, 99);
@@ -40,5 +18,5 @@ LL | |         file_total_size += upload_size;
 LL | |     });
    | |______^ help: try using `fold` instead: `file_total_size += (0..some_num.len()).into_iter().map(|_| {let (_, upload_size) = (true, 99); upload_size}).fold(0, |mut file_total_size, v| { file_total_size += v; file_total_size })`
 
-error: aborting due to 4 previous errors
+error: aborting due to 2 previous errors
 

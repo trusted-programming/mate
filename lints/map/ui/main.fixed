@@ -1,0 +1,56 @@
+// run-rustfix
+fn main() {
+    warn_vec();
+    warn_hashmap();
+    warn_hashset();
+    warn_btreemap();
+    warn_btreeset();
+}
+
+fn warn_vec() {
+    let mut data = vec![];
+    let numbers = vec![1, 2, 3, 4, 5];
+    data.extend(numbers.iter().map(|&num| {  num * 3 }).collect::<Vec<_>>());
+
+    println!("Data: {:?}", data);
+}
+
+fn warn_hashmap() {
+    use std::collections::HashMap;
+
+    let mut data = HashMap::new();
+    let numbers = vec![1, 2, 3, 4, 5];
+    data.extend(numbers.iter().map(|&num| {  (num, num.to_string()) }).collect::<HashMap<_,_>>());
+
+    println!("Data: {:?}", data);
+}
+
+fn warn_hashset() {
+    use std::collections::HashSet;
+
+    let mut data = HashSet::new();
+    let numbers = vec![1, 2, 3, 4, 5];
+    data.extend(numbers.iter().map(|&num| {  num }).collect::<HashSet<_>>());
+
+    println!("Data: {:?}", data);
+}
+
+fn warn_btreemap() {
+    use std::collections::BTreeMap;
+
+    let mut data = BTreeMap::new();
+    let numbers = vec![1, 2, 3, 4, 5];
+    data.extend(numbers.iter().map(|&num| {  (num, num.to_string()) }).collect::<BTreeMap<_,_>>());
+
+    println!("Data: {:?}", data);
+}
+
+fn warn_btreeset() {
+    use std::collections::BTreeSet;
+
+    let mut data = BTreeSet::new();
+    let numbers = vec![1, 2, 3, 4, 5];
+    data.extend(numbers.iter().map(|&num| {  num }).collect::<BTreeSet<_>>());
+
+    println!("Data: {:?}", data);
+}

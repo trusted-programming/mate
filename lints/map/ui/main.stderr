@@ -1,0 +1,57 @@
+error: implicit map
+  --> $DIR/main.rs:13:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         data.push(num * 3);
+LL | |     });
+   | |______^ help: try using `map` instead: `data.extend(numbers.iter().map(|&num| {  num * 3 }).collect::<Vec<_>>())`
+   |
+   = note: `-D map-vec` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(map_vec)]`
+
+error: implicit map
+  --> $DIR/main.rs:25:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         data.insert(num, num.to_string());
+LL | |     });
+   | |______^ help: try using `map` instead: `data.extend(numbers.iter().map(|&num| {  (num, num.to_string()) }).collect::<HashMap<_,_>>())`
+   |
+   = note: `-D map-hashmap` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(map_hashmap)]`
+
+error: implicit map
+  --> $DIR/main.rs:37:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         data.insert(num);
+LL | |     });
+   | |______^ help: try using `map` instead: `data.extend(numbers.iter().map(|&num| {  num }).collect::<HashSet<_>>())`
+   |
+   = note: `-D map-hashset` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(map_hashset)]`
+
+error: implicit map
+  --> $DIR/main.rs:49:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         data.insert(num, num.to_string());
+LL | |     });
+   | |______^ help: try using `map` instead: `data.extend(numbers.iter().map(|&num| {  (num, num.to_string()) }).collect::<BTreeMap<_,_>>())`
+   |
+   = note: `-D map-btreemap` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(map_btreemap)]`
+
+error: implicit map
+  --> $DIR/main.rs:61:5
+   |
+LL | /     numbers.iter().for_each(|&num| {
+LL | |         data.insert(num);
+LL | |     });
+   | |______^ help: try using `map` instead: `data.extend(numbers.iter().map(|&num| {  num }).collect::<BTreeSet<_>>())`
+   |
+   = note: `-D map-btreeset` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(map_btreeset)]`
+
+error: aborting due to 5 previous errors
+

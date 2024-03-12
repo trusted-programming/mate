@@ -1,7 +1,7 @@
 [package]
 name = "mate"
 version = "0.1.0"
-authors = ["Cameron Low <email>", "Luca Carlig <luca.carlig@huawei.com"]
+authors = ["Cameron Low <cameron.low.2018@bristol.ac.uk>", "Luca Carlig <luca.carlig@huawei.com"]
 description = "library of lints for automatic parallelization"
 edition = "2021"
 publish = false
@@ -13,11 +13,11 @@ crate-type = ["cdylib"]
 [dependencies]
 for_each = { path = "lints/for_each", features = ["rlib"] }
 filter = { path = "lints/filter", features = ["rlib"] }
+map = { path = "lints/map", features = ["rlib"] }
 fold = { path = "lints/fold", features = ["rlib"] }
 par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
 rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
-
 
 dylint_linting = { version = "2.6.1" }
 
@@ -28,6 +28,7 @@ rustc_private = true
 members = [
     "lints/for_each",
     "lints/filter",
+    "lints/map",
     "lints/fold",
     "lints/par_fold",
     "lints/par_iter",
