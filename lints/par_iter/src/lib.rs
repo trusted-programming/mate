@@ -10,6 +10,7 @@ extern crate rustc_hir_typeck;
 extern crate rustc_infer;
 extern crate rustc_middle;
 extern crate rustc_span;
+extern crate rustc_trait_selection;
 
 mod constants;
 mod variable_check;
@@ -26,6 +27,7 @@ use variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
     is_type_valid,
 };
+
 dylint_linting::declare_late_lint! {
     /// ### What it does
     /// parallelize iterators using rayon
@@ -63,10 +65,8 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 // parallel iterator
                 // let mut implemented_methods: Vec<&AssocItems> = Vec::new();
 
-                let mut allowed_methods: FxHashSet<&str> = FxHashSet::default();
-                allowed_methods.insert("into_iter");
-                allowed_methods.insert("iter");
-                allowed_methods.insert("iter_mut");
+                let mut allowed_methods: FxHashSet<&str> =
+                    ["into_iter", "iter", "iter_mut"].into_iter().collect();
                 allowed_methods.extend(get_methods(cx));
 
                 let mut top_expr = *recv;

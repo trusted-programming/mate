@@ -7,12 +7,13 @@ use rustc_lint::{LateContext, LintContext};
 use rustc_middle::{
     hir::map::associated_body,
     mir::FakeReadCause,
-    ty::{self, GenericArg, GenericArgKind, Ty, TyCtxt, UpvarId, UpvarPath},
+    ty::{self, Ty, TyCtxt, UpvarId, UpvarPath},
 };
 use rustc_span::{sym, Symbol};
+use rustc_trait_selection::infer::InferCtxtExt;
 use std::ops::ControlFlow;
 
-use crate::constants::{TRAIT_PATHS, TRAIT_REF_PATHS};
+use crate::constants::TRAIT_PATHS;
 
 pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
     mutably_used_vars: hir::HirIdSet,
@@ -327,31 +328,19 @@ pub(crate) fn check_implements_par_iter<'tcx>(
     expr: &'tcx hir::Expr<'_>,
 ) -> Vec<hir::def_id::DefId> {
     let ty = cx.typeck_results().expr_ty(expr);
-
-    let lt;
-    if let Some(lifetime) = ty
-        .walk()
-        .find(|t| matches!(t.unpack(), GenericArgKind::Lifetime(_)))
-    {
-        lt = lifetime;
-    } else {
-        let static_region = cx.tcx.lifetimes.re_static;
-        lt = GenericArg::from(static_region);
-    }
     let mut implemented_traits = Vec::new();
 
     for trait_path in TRAIT_PATHS {
-        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path)
-            && implements_trait(cx, ty, trait_def_id, &[])
-        {
-            implemented_traits.push(trait_def_id);
-        }
-    }
-    for trait_path in TRAIT_REF_PATHS {
-        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path)
-            && implements_trait(cx, ty, trait_def_id, &[lt])
-        {
-            implemented_traits.push(trait_def_id);
+        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path) {
+            if cx
+                .tcx
+                .infer_ctxt()
+                .build()
+                .type_implements_trait(trait_def_id, [ty], cx.param_env)
+                .must_apply_modulo_regions()
+            {
+                implemented_traits.push(trait_def_id);
+            }
         }
     }
     implemented_traits
