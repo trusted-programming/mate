@@ -257,15 +257,15 @@ dependencies = [
 
 [[package]]
 name = "dylint"
-version = "2.6.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d6259cf4df09300534dcfa6a49918bb442327111e370c656b31f1c10ec08145"
+checksum = "927d37eecb249c058d2d6100fd86f47c9424d13796bcd02d2c81a6c1ed80067b"
 dependencies = [
  "ansi_term",
  "anyhow",
  "cargo_metadata",
  "dirs",
- "dylint_internal",
+ "dylint_internal 3.0.0",
  "is-terminal",
  "log",
  "once_cell",
@@ -282,6 +282,15 @@ version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9400420c9ffa71c6b1b75d84225a150e3428eb12159e5bf4f56285bd9eb1c095"
 dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "dylint_internal"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4c32056fd5a610d2c9abc98155d395eb3ce61989c89e78e417241d06a5cc41b"
+dependencies = [
  "ansi_term",
  "anyhow",
  "bitflags 2.4.2",
@@ -292,8 +301,8 @@ dependencies = [
  "is-terminal",
  "log",
  "once_cell",
+ "regex",
  "rust-embed",
- "sedregex",
 ]
 
 [[package]]
@@ -303,7 +312,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43fc05c7103dfadd497486bbbf941899888f4e19271da70b58f66385247230c2"
 dependencies = [
  "cargo_metadata",
- "dylint_internal",
+ "dylint_internal 2.6.1",
  "paste",
  "rustversion",
  "serde",
@@ -313,15 +322,15 @@ dependencies = [
 
 [[package]]
 name = "dylint_testing"
-version = "2.6.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "785fa52ac8fe5f1056a71955f4ebda3ca90c269ef28b172ad85a3901752d5fdf"
+checksum = "e493af8de71bd92c640c95782748be2f2b6ff3b976d7077edf917181ebdd534a"
 dependencies = [
  "anyhow",
  "cargo_metadata",
  "compiletest_rs",
  "dylint",
- "dylint_internal",
+ "dylint_internal 3.0.0",
  "env_logger",
  "once_cell",
  "regex",
@@ -939,15 +948,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sedregex"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19411e23596093f03bbd11dc45603b6329bb4bfec77b9fd13e2b9fc9b02efe3e"
-dependencies = [
- "regex",
-]
-
-[[package]]
 name = "semver"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1219,9 +1219,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "walkdir"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d71d857dc86794ca4c280d616f7da00d2dbfd8cd788846559a6813e6aa4b54ee"
+checksum = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
 dependencies = [
  "same-file",
  "winapi-util",
