@@ -265,7 +265,7 @@ dependencies = [
  "anyhow",
  "cargo_metadata",
  "dirs",
- "dylint_internal",
+ "dylint_internal 2.6.1",
  "is-terminal",
  "log",
  "once_cell",
@@ -297,13 +297,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "dylint_linting"
-version = "2.6.1"
+name = "dylint_internal"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43fc05c7103dfadd497486bbbf941899888f4e19271da70b58f66385247230c2"
+checksum = "d4c32056fd5a610d2c9abc98155d395eb3ce61989c89e78e417241d06a5cc41b"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "dylint_linting"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b952b4f93ea8df102105ea08a9fbcd92af9791c6cdb9a6f27bb2820816c26d5a"
 dependencies = [
  "cargo_metadata",
- "dylint_internal",
+ "dylint_internal 3.0.0",
  "paste",
  "rustversion",
  "serde",
@@ -321,7 +330,7 @@ dependencies = [
  "cargo_metadata",
  "compiletest_rs",
  "dylint",
- "dylint_internal",
+ "dylint_internal 2.6.1",
  "env_logger",
  "once_cell",
  "regex",
