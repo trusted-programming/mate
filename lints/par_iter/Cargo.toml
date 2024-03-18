@@ -10,7 +10,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-dylint_linting = "2.6.1"
+dylint_linting = "3.0.0"
 
 clippy_utils = { workspace = true }
 utils = { workspace = true }
