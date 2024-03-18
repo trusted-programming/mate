@@ -37,7 +37,7 @@ members = [
 ]
 
 [dev-dependencies]
-dylint_testing = "2.6.1"
+dylint_testing = "3.0.0"
 
 [workspace.dependencies]
 clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "aa2c94e416d346341fe3a875160a7d064596f4d3" }
