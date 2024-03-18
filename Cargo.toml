@@ -19,7 +19,7 @@ par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
 rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
 
-dylint_linting = { version = "2.6.1" }
+dylint_linting = { version = "3.0.0" }
 
 [package.metadata.rust-analyzer]
 rustc_private = true
