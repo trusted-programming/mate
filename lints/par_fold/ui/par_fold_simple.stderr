@@ -1,4 +1,4 @@
-error: sequential fold
+warning: sequential fold
   --> $DIR/par_fold_simple.rs:13:12
    |
 LL |       sum += numbers.iter().map(|&num| num).fold(0, |mut sum, v| {
@@ -8,12 +8,11 @@ LL | |         sum
 LL | |     });
    | |______^
    |
-   = note: `-D warn-par-fold-simple` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(warn_par_fold_simple)]`
+   = note: `#[warn(warn_par_fold_simple)]` on by default
 help: try using a parallel fold on the iterator
    |
 LL |     sum += numbers.par_iter().map(|&num| num).reduce(|| 0, |mut sum, v| {
    |                    ~~~~~~~~                   ~~~~~~ ~~~~
 
-error: aborting due to 1 previous error
+warning: 1 warning emitted
 

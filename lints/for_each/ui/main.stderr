@@ -1,4 +1,4 @@
-error: use a for_each to enable iterator refinement
+warning: use a for_each to enable iterator refinement
   --> $DIR/main.rs:35:5
    |
 LL | /     for x in 1..=100 {
@@ -6,8 +6,7 @@ LL | |         println!("{x}");
 LL | |     }
    | |_____^
    |
-   = note: `-D for-each` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(for_each)]`
+   = note: `#[warn(for_each)]` on by default
 help: try using `for_each` on the iterator
    |
 LL ~     (1..=100).into_iter().for_each(|x| {
@@ -15,7 +14,7 @@ LL +         println!("{x}");
 LL +     });
    |
 
-error: use a for_each to enable iterator refinement
+warning: use a for_each to enable iterator refinement
   --> $DIR/main.rs:44:5
    |
 LL | /     for a in vec_a {
@@ -36,7 +35,7 @@ LL +         dbg!(a);
 LL +     });
    |
 
-error: use a for_each to enable iterator refinement
+warning: use a for_each to enable iterator refinement
   --> $DIR/main.rs:70:9
    |
 LL | /         for b in &vec_b {
@@ -51,7 +50,7 @@ LL +             dbg!(a, b);
 LL +         });
    |
 
-error: use a for_each to enable iterator refinement
+warning: use a for_each to enable iterator refinement
   --> $DIR/main.rs:79:5
    |
 LL | /     for _ in 0..some_num.len() {
@@ -68,5 +67,5 @@ LL +         file_total_size += upload_size;
 LL +     });
    |
 
-error: aborting due to 4 previous errors
+warning: 4 warnings emitted
 

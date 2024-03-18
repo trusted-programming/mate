@@ -1,13 +1,12 @@
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:42:5
    |
 LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..100).into_par_iter()`
    |
-   = note: `-D par-iter` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(par_iter)]`
+   = note: `#[warn(par_iter)]` on by default
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:66:5
    |
 LL | /     (0..100)
@@ -20,35 +19,35 @@ LL ~     (0..100)
 LL +         .into_par_iter()
    |
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:101:5
    |
 LL |     list.into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:117:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:200:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:227:5
    |
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
 
-error: found iterator that can be parallelized
+warning: found iterator that can be parallelized
   --> $DIR/main.rs:323:30
    |
 LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
    |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
 
-error: aborting due to 7 previous errors
+warning: 7 warnings emitted
 

@@ -1,4 +1,4 @@
-error: implicit filter inside `for_each`
+warning: implicit filter inside `for_each`
   --> $DIR/main.rs:12:18
    |
 LL |       items.iter().for_each(|&item| {
@@ -9,10 +9,9 @@ LL | |         }
 LL | |     });
    | |______^ help: try lifting the filter iterator: `filter(|&item| {  item.starts_with('a') }).for_each(|&item| {  one_string.push_str(item); })`
    |
-   = note: `-D filter-simple` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(filter_simple)]`
+   = note: `#[warn(filter_simple)]` on by default
 
-error: implicit filter inside `for_each`
+warning: implicit filter inside `for_each`
   --> $DIR/main.rs:23:20
    |
 LL |       numbers.iter().for_each(|&num| {
@@ -24,10 +23,9 @@ LL | |         sum += num;
 LL | |     });
    | |______^ help: try lifting the filter iterator: `filter(|&num| {  !(num % 2 == 0) }).for_each(|&num| {   sum += num; })`
    |
-   = note: `-D filter-simple-flipped` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(filter_simple_flipped)]`
+   = note: `#[warn(filter_simple_flipped)]` on by default
 
-error: implicit filter inside `for_each`
+warning: implicit filter inside `for_each`
   --> $DIR/main.rs:34:18
    |
 LL |       items.iter().for_each(|&item| {
@@ -38,7 +36,7 @@ LL | |         }
 LL | |     });
    | |______^ help: try lifting the filter iterator: `filter(|&item| {  item.starts_with('a') }).for_each(|&item| {  println!("Starts with 'a': {}", item) })`
 
-error: implicit filter inside `for_each`
+warning: implicit filter inside `for_each`
   --> $DIR/main.rs:44:20
    |
 LL |       numbers.iter().for_each(|&num| {
@@ -50,5 +48,5 @@ LL | |         println!("Odd number: {}", num);
 LL | |     });
    | |______^ help: try lifting the filter iterator: `filter(|&num| {  !(num % 2 == 0) }).for_each(|&num| {   println!("Odd number: {}", num) })`
 
-error: aborting due to 4 previous errors
+warning: 4 warnings emitted
 
