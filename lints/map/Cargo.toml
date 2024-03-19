@@ -25,7 +25,7 @@ rustc_private = true
 rlib = ["dylint_linting/constituent"]
 
 [[example]]
-name = "fold_main"
+name = "map_main"
 path = "ui/main.rs"
 
 [lints.clippy]

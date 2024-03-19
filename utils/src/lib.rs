@@ -15,9 +15,6 @@ use rustc_hir::{Expr, ExprKind, Stmt, StmtKind};
 use rustc_span::source_map::SourceMap;
 use rustc_span::{Span, SyntaxContext};
 
-pub mod constants;
-pub mod variable_check;
-
 pub fn is_local_def(stmt: &Stmt) -> bool {
     match stmt.kind {
         StmtKind::Local(_) => true,

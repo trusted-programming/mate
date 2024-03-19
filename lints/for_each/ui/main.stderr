@@ -1,5 +1,5 @@
 warning: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:35:5
+  --> $DIR/main.rs:43:5
    |
 LL | /     for x in 1..=100 {
 LL | |         println!("{x}");
@@ -15,7 +15,7 @@ LL +     });
    |
 
 warning: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:44:5
+  --> $DIR/main.rs:52:5
    |
 LL | /     for a in vec_a {
 LL | |         if a == 1 {
@@ -36,7 +36,7 @@ LL +     });
    |
 
 warning: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:70:9
+  --> $DIR/main.rs:78:9
    |
 LL | /         for b in &vec_b {
 LL | |             dbg!(a, b);
@@ -51,7 +51,7 @@ LL +         });
    |
 
 warning: use a for_each to enable iterator refinement
-  --> $DIR/main.rs:79:5
+  --> $DIR/main.rs:88:5
    |
 LL | /     for _ in 0..some_num.len() {
 LL | |         let (_, upload_size) = (true, 99);
@@ -67,5 +67,20 @@ LL +         file_total_size += upload_size;
 LL +     });
    |
 
-warning: 4 warnings emitted
+warning: use a for_each to enable iterator refinement
+  --> $DIR/main.rs:112:5
+   |
+LL | /     for _ in 0..thread_num {
+LL | |         locals.push(LocalQueue::new());
+LL | |     }
+   | |_____^
+   |
+help: try using `for_each` on the iterator
+   |
+LL ~     (0..thread_num).into_iter().for_each(|_| {
+LL +         locals.push(LocalQueue::new());
+LL +     });
+   |
+
+warning: 5 warnings emitted
 

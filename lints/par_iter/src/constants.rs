@@ -1,4 +1,4 @@
-pub const TRAIT_PATHS: &[&[&str]] = &[
+pub(crate) const TRAIT_PATHS: &[&[&str]] = &[
     &["rayon", "iter", "IntoParallelIterator"],
     &["rayon", "iter", "ParallelIterator"],
     &["rayon", "iter", "IndexedParallelIterator"],

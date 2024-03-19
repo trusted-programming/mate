@@ -20,6 +20,14 @@ impl MyBuilder {
     }
 }
 
+struct LocalQueue {}
+
+impl LocalQueue {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
 // no
 fn build_request_builder() {
     let headers = vec![("Key1", "Value1"), ("Key2", "Value2")];
@@ -73,6 +81,7 @@ fn nested_loop() {
     }
 }
 
+// for_each
 fn get_upload_file_total_size() -> u64 {
     let some_num = vec![0; 10];
     let mut file_total_size = 0;
@@ -92,6 +101,16 @@ fn return_loop() {
         if !item.is_some() {
             return;
         }
+    }
+}
+
+// for_each
+fn local_into_iter() {
+    let thread_num = 10;
+    let mut locals = vec![];
+
+    for _ in 0..thread_num {
+        locals.push(LocalQueue::new());
     }
 }
 

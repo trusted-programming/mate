@@ -11,11 +11,11 @@ use rustc_middle::{
 };
 use rustc_span::{sym, Symbol};
 use rustc_trait_selection::infer::InferCtxtExt;
-use std::{collections::HashSet, ops::ControlFlow};
+use std::ops::ControlFlow;
 
 use crate::constants::TRAIT_PATHS;
 
-pub struct MutablyUsedVariablesCtxt<'tcx> {
+pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
     mutably_used_vars: hir::HirIdSet,
     all_vars: FxHashSet<Ty<'tcx>>,
     prev_bind: Option<hir::HirId>,
@@ -29,7 +29,7 @@ pub struct MutablyUsedVariablesCtxt<'tcx> {
     tcx: TyCtxt<'tcx>,
 }
 
-pub fn check_variables<'tcx>(
+pub(crate) fn check_variables<'tcx>(
     cx: &LateContext<'tcx>,
     body_owner: hir::def_id::LocalDefId,
     body: &hir::Body<'tcx>,
@@ -81,63 +81,12 @@ pub fn check_variables<'tcx>(
     res
 }
 
-// TODO: remove repetation is this two function almost identical
-pub fn check_variables_expr<'tcx>(cx: &LateContext<'tcx>, ex: &'tcx hir::Expr) -> bool {
-    let MutablyUsedVariablesCtxt {
-        mutably_used_vars,
-        all_vars,
-        ..
-    } = {
-        let body_owner = ex.hir_id.owner.def_id;
-
-        let mut ctx = MutablyUsedVariablesCtxt {
-            mutably_used_vars: hir::HirIdSet::default(),
-            all_vars: FxHashSet::default(),
-            prev_bind: None,
-            prev_move_to_closure: hir::HirIdSet::default(),
-            aliases: hir::HirIdMap::default(),
-            async_closures: FxHashSet::default(),
-            tcx: cx.tcx,
-        };
-        let infcx = cx.tcx.infer_ctxt().build();
-        euv::ExprUseVisitor::new(
-            &mut ctx,
-            &infcx,
-            body_owner,
-            cx.param_env,
-            cx.typeck_results(),
-        )
-        .walk_expr(ex);
-
-        let mut checked_closures = FxHashSet::default();
-
-        // We retrieve all the closures declared in the function because they will not be found
-        // by `euv::Delegate`.
-        let mut closures: FxHashSet<hir::def_id::LocalDefId> = FxHashSet::default();
-        for_each_expr_with_closures(cx, ex, |expr| {
-            if let hir::ExprKind::Closure(closure) = expr.kind {
-                closures.insert(closure.def_id);
-            }
-            ControlFlow::<()>::Continue(())
-        });
-        check_closures(&mut ctx, cx, &infcx, &mut checked_closures, closures);
-
-        ctx
-    };
-    let mut res = true;
-    for ty in all_vars {
-        res &= is_type_valid(cx, ty);
-    }
-    res &= mutably_used_vars.is_empty();
-    res
-}
-
-pub fn check_closures<'tcx, S: ::std::hash::BuildHasher>(
+pub(crate) fn check_closures<'tcx>(
     ctx: &mut MutablyUsedVariablesCtxt<'tcx>,
     cx: &LateContext<'tcx>,
     infcx: &InferCtxt<'tcx>,
-    checked_closures: &mut HashSet<hir::def_id::LocalDefId, S>,
-    closures: HashSet<hir::def_id::LocalDefId, S>,
+    checked_closures: &mut FxHashSet<hir::def_id::LocalDefId>,
+    closures: FxHashSet<hir::def_id::LocalDefId>,
 ) {
     let hir = cx.tcx.hir();
     for closure in closures {
@@ -374,7 +323,7 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
     }
 }
 
-pub fn check_implements_par_iter<'tcx>(
+pub(crate) fn check_implements_par_iter<'tcx>(
     cx: &'tcx LateContext,
     expr: &'tcx hir::Expr<'_>,
 ) -> Vec<hir::def_id::DefId> {
@@ -397,20 +346,24 @@ pub fn check_implements_par_iter<'tcx>(
     implemented_traits
 }
 
-pub fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
+pub(crate) fn check_trait_impl<'tcx>(
+    cx: &LateContext<'tcx>,
+    ty: Ty<'tcx>,
+    trait_name: Symbol,
+) -> bool {
     cx.tcx
         .get_diagnostic_item(trait_name)
         .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
 }
 
-pub fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
+pub(crate) fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
     let is_send = check_trait_impl(cx, ty, sym::Send);
     let is_sync = check_trait_impl(cx, ty, sym::Sync);
     let is_copy = check_trait_impl(cx, ty, sym::Copy);
     is_copy || (is_send && is_sync)
 }
 
-pub fn generate_suggestion(
+pub(crate) fn generate_suggestion(
     cx: &LateContext<'_>,
     expr: &hir::Expr<'_>,
     path: &hir::PathSegment,
