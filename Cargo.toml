@@ -1,7 +1,10 @@
 [package]
 name = "mate"
 version = "0.1.0"
-authors = ["Cameron Low <cameron.low.2018@bristol.ac.uk>", "Luca Carlig <luca.carlig@huawei.com"]
+authors = [
+    "Cameron Low <cameron.low.2018@bristol.ac.uk>",
+    "Luca Carlig <luca.carlig@huawei.com",
+]
 description = "library of lints for automatic parallelization"
 edition = "2021"
 publish = false
@@ -40,7 +43,7 @@ members = [
 dylint_testing = "3.0.0"
 
 [workspace.dependencies]
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "aa2c94e416d346341fe3a875160a7d064596f4d3" }
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "b5dcaae8448ce700807c9d9fec4763ec00f7e976" }
 utils = { path = "utils" }
 
 [workspace.metadata.dylint]
