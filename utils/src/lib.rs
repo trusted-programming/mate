@@ -2,12 +2,21 @@
 #![allow(clippy::result_unit_err)]
 
 extern crate rustc_driver;
+extern crate rustc_hash;
 extern crate rustc_hir;
+extern crate rustc_hir_typeck;
+extern crate rustc_infer;
+extern crate rustc_lint;
+extern crate rustc_middle;
 extern crate rustc_span;
+extern crate rustc_trait_selection;
 
 use rustc_hir::{Expr, ExprKind, Stmt, StmtKind};
 use rustc_span::source_map::SourceMap;
 use rustc_span::{Span, SyntaxContext};
+
+pub mod constants;
+pub mod variable_check;
 
 pub fn is_local_def(stmt: &Stmt) -> bool {
     match stmt.kind {

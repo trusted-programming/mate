@@ -4,16 +4,10 @@
 
 extern crate rustc_data_structures;
 extern crate rustc_errors;
-extern crate rustc_hash;
 extern crate rustc_hir;
-extern crate rustc_hir_typeck;
-extern crate rustc_infer;
+
 extern crate rustc_middle;
 extern crate rustc_span;
-extern crate rustc_trait_selection;
-
-mod constants;
-mod variable_check;
 
 use clippy_utils::{get_parent_expr, get_trait_def_id};
 use rustc_data_structures::fx::FxHashSet;
@@ -23,7 +17,7 @@ use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::{self, Ty};
 use rustc_span::sym;
-use variable_check::{
+use utils::variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
     is_type_valid,
 };

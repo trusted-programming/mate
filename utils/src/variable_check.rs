@@ -15,7 +15,7 @@ use std::ops::ControlFlow;
 
 use crate::constants::TRAIT_PATHS;
 
-pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
+pub struct MutablyUsedVariablesCtxt<'tcx> {
     mutably_used_vars: hir::HirIdSet,
     all_vars: FxHashSet<Ty<'tcx>>,
     prev_bind: Option<hir::HirId>,
@@ -29,7 +29,7 @@ pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
     tcx: TyCtxt<'tcx>,
 }
 
-pub(crate) fn check_variables<'tcx>(
+pub fn check_variables<'tcx>(
     cx: &LateContext<'tcx>,
     body_owner: hir::def_id::LocalDefId,
     body: &hir::Body<'tcx>,
@@ -81,7 +81,7 @@ pub(crate) fn check_variables<'tcx>(
     res
 }
 
-pub(crate) fn check_closures<'tcx>(
+pub fn check_closures<'tcx>(
     ctx: &mut MutablyUsedVariablesCtxt<'tcx>,
     cx: &LateContext<'tcx>,
     infcx: &InferCtxt<'tcx>,
@@ -323,7 +323,7 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
     }
 }
 
-pub(crate) fn check_implements_par_iter<'tcx>(
+pub fn check_implements_par_iter<'tcx>(
     cx: &'tcx LateContext,
     expr: &'tcx hir::Expr<'_>,
 ) -> Vec<hir::def_id::DefId> {
@@ -346,24 +346,20 @@ pub(crate) fn check_implements_par_iter<'tcx>(
     implemented_traits
 }
 
-pub(crate) fn check_trait_impl<'tcx>(
-    cx: &LateContext<'tcx>,
-    ty: Ty<'tcx>,
-    trait_name: Symbol,
-) -> bool {
+pub fn check_trait_impl<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, trait_name: Symbol) -> bool {
     cx.tcx
         .get_diagnostic_item(trait_name)
         .map_or(false, |trait_id| implements_trait(cx, ty, trait_id, &[]))
 }
 
-pub(crate) fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
+pub fn is_type_valid<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
     let is_send = check_trait_impl(cx, ty, sym::Send);
     let is_sync = check_trait_impl(cx, ty, sym::Sync);
     let is_copy = check_trait_impl(cx, ty, sym::Copy);
     is_copy || (is_send && is_sync)
 }
 
-pub(crate) fn generate_suggestion(
+pub fn generate_suggestion(
     cx: &LateContext<'_>,
     expr: &hir::Expr<'_>,
     path: &hir::PathSegment,
