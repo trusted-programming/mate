@@ -11,7 +11,7 @@ use rustc_middle::{
 };
 use rustc_span::{sym, Symbol};
 use rustc_trait_selection::infer::InferCtxtExt;
-use std::ops::ControlFlow;
+use std::{collections::HashSet, ops::ControlFlow};
 
 use crate::constants::TRAIT_PATHS;
 
@@ -81,12 +81,63 @@ pub fn check_variables<'tcx>(
     res
 }
 
-pub fn check_closures<'tcx>(
+// TODO: remove repetation is this two function almost identical
+pub fn check_variables_expr<'tcx>(cx: &LateContext<'tcx>, ex: &'tcx hir::Expr) -> bool {
+    let MutablyUsedVariablesCtxt {
+        mutably_used_vars,
+        all_vars,
+        ..
+    } = {
+        let body_owner = ex.hir_id.owner.def_id;
+
+        let mut ctx = MutablyUsedVariablesCtxt {
+            mutably_used_vars: hir::HirIdSet::default(),
+            all_vars: FxHashSet::default(),
+            prev_bind: None,
+            prev_move_to_closure: hir::HirIdSet::default(),
+            aliases: hir::HirIdMap::default(),
+            async_closures: FxHashSet::default(),
+            tcx: cx.tcx,
+        };
+        let infcx = cx.tcx.infer_ctxt().build();
+        euv::ExprUseVisitor::new(
+            &mut ctx,
+            &infcx,
+            body_owner,
+            cx.param_env,
+            cx.typeck_results(),
+        )
+        .walk_expr(ex);
+
+        let mut checked_closures = FxHashSet::default();
+
+        // We retrieve all the closures declared in the function because they will not be found
+        // by `euv::Delegate`.
+        let mut closures: FxHashSet<hir::def_id::LocalDefId> = FxHashSet::default();
+        for_each_expr_with_closures(cx, ex, |expr| {
+            if let hir::ExprKind::Closure(closure) = expr.kind {
+                closures.insert(closure.def_id);
+            }
+            ControlFlow::<()>::Continue(())
+        });
+        check_closures(&mut ctx, cx, &infcx, &mut checked_closures, closures);
+
+        ctx
+    };
+    let mut res = true;
+    for ty in all_vars {
+        res &= is_type_valid(cx, ty);
+    }
+    res &= mutably_used_vars.is_empty();
+    res
+}
+
+pub fn check_closures<'tcx, S: ::std::hash::BuildHasher>(
     ctx: &mut MutablyUsedVariablesCtxt<'tcx>,
     cx: &LateContext<'tcx>,
     infcx: &InferCtxt<'tcx>,
-    checked_closures: &mut FxHashSet<hir::def_id::LocalDefId>,
-    closures: FxHashSet<hir::def_id::LocalDefId>,
+    checked_closures: &mut HashSet<hir::def_id::LocalDefId, S>,
+    closures: HashSet<hir::def_id::LocalDefId, S>,
 ) {
     let hir = cx.tcx.hir();
     for closure in closures {
