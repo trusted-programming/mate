@@ -13,6 +13,7 @@ use std::{collections::HashSet, ops::ControlFlow};
 
 pub struct MutablyUsedVariablesCtxt<'tcx> {
     all_vars: FxHashSet<Ty<'tcx>>,
+    copy_vars: FxHashSet<Ty<'tcx>>,
     prev_bind: Option<hir::HirId>,
     /// In async functions, the inner AST is composed of multiple layers until we reach the code
     /// defined by the user. Because of that, some variables are marked as mutably borrowed even
@@ -23,11 +24,16 @@ pub struct MutablyUsedVariablesCtxt<'tcx> {
 
 // TODO: remove repetation is this two function almost identical
 pub fn check_variables<'tcx>(cx: &LateContext<'tcx>, ex: &'tcx hir::Expr) -> bool {
-    let MutablyUsedVariablesCtxt { all_vars, .. } = {
+    let MutablyUsedVariablesCtxt {
+        mut all_vars,
+        copy_vars,
+        ..
+    } = {
         let body_owner = ex.hir_id.owner.def_id;
 
         let mut ctx = MutablyUsedVariablesCtxt {
             all_vars: FxHashSet::default(),
+            copy_vars: FxHashSet::default(),
             prev_bind: None,
             prev_move_to_closure: hir::HirIdSet::default(),
         };
@@ -56,7 +62,7 @@ pub fn check_variables<'tcx>(cx: &LateContext<'tcx>, ex: &'tcx hir::Expr) -> boo
 
         ctx
     };
-
+    all_vars.retain(|var| !copy_vars.contains(var));
     all_vars.is_empty()
 }
 
@@ -108,7 +114,21 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
     fn borrow(&mut self, _: &euv::PlaceWithHirId<'tcx>, _: hir::HirId, _: ty::BorrowKind) {}
 
     fn mutate(&mut self, _: &euv::PlaceWithHirId<'tcx>, _id: hir::HirId) {}
-    fn copy(&mut self, _: &euv::PlaceWithHirId<'tcx>, _: hir::HirId) {}
+    fn copy(&mut self, cmt: &euv::PlaceWithHirId<'tcx>, _: hir::HirId) {
+        if let euv::Place {
+            base:
+                euv::PlaceBase::Local(_)
+                | euv::PlaceBase::Upvar(UpvarId {
+                    var_path: UpvarPath { hir_id: _ },
+                    ..
+                }),
+            base_ty,
+            ..
+        } = &cmt.place
+        {
+            self.copy_vars.insert(*base_ty);
+        }
+    }
     fn fake_read(
         &mut self,
         _: &rustc_hir_typeck::expr_use_visitor::PlaceWithHirId<'tcx>,
