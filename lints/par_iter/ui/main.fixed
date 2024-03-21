@@ -1,10 +1,13 @@
 // run-rustfix
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code, unused_imports, unused_variables, deprecated)]
 
 use core::ascii;
+use futures::io::{self, AsyncWrite, IoSlice};
+use futures::task::{Context, Poll};
 use rayon::prelude::*;
 use std::collections::LinkedList;
 use std::ops::Range;
+use std::pin::Pin;
 use std::rc::Rc;
 
 struct LocalQueue {}
@@ -34,6 +37,8 @@ struct ApplicationState {
     foreground_high_qos_cases: Vec<QosCase>,
     background_high_qos_cases: Vec<QosCase>,
 }
+
+struct MyWriter;
 
 fn main() {}
 
@@ -348,4 +353,38 @@ fn collect_at_end_no_par() {
     let t_size_vec_no_send: Vec<TsizeNoSend> = t_size_vec.iter().map(|t| t.to_no_send()).collect();
 
     println!("{:?}", t_size_vec_no_send);
+}
+
+// should parallelize
+impl AsyncWrite for MyWriter {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        // Dummy implementation: Pretend we've written the whole buffer
+        Poll::Ready(Ok(buf.len()))
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        // Dummy implementation: Always say it's flushed
+        Poll::Ready(Ok(()))
+    }
+
+    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        // Dummy implementation: Always say it's closed
+        Poll::Ready(Ok(()))
+    }
+
+    fn poll_write_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        let buf = bufs
+            .par_iter()
+            .find(|b| !b.is_empty())
+            .map_or(&[][..], |b| &**b);
+        self.poll_write(cx, buf)
+    }
 }

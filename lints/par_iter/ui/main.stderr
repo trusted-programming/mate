@@ -1,5 +1,5 @@
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:42:5
+  --> $DIR/main.rs:47:5
    |
 LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..100).into_par_iter()`
@@ -7,7 +7,7 @@ LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    = note: `#[warn(par_iter)]` on by default
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:66:5
+  --> $DIR/main.rs:71:5
    |
 LL | /     (0..100)
 LL | |         .into_iter()
@@ -20,34 +20,48 @@ LL +         .into_par_iter()
    |
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:101:5
+  --> $DIR/main.rs:106:5
    |
 LL |     list.into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:117:5
+  --> $DIR/main.rs:122:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:200:5
+  --> $DIR/main.rs:205:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:227:5
+  --> $DIR/main.rs:232:5
    |
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:323:30
+  --> $DIR/main.rs:328:30
    |
 LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
    |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
 
-warning: 7 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:384:19
+   |
+LL |           let buf = bufs
+   |  ___________________^
+LL | |             .iter()
+   | |___________________^
+   |
+help: try using a parallel iterator
+   |
+LL ~         let buf = bufs
+LL +             .par_iter()
+   |
+
+warning: 8 warnings emitted
 

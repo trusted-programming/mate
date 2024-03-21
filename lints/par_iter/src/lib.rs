@@ -66,7 +66,9 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 // let mut implemented_methods: Vec<&AssocItems> = Vec::new();
 
                 let mut allowed_methods: FxHashSet<&str> =
-                    ["into_iter", "iter", "iter_mut"].into_iter().collect();
+                    ["into_iter", "iter", "iter_mut", "map_or"]
+                        .into_iter()
+                        .collect();
                 allowed_methods.extend(get_methods(cx));
 
                 let mut top_expr = *recv;

@@ -14,9 +14,11 @@ dylint_linting = "3.0.0"
 
 clippy_utils = { workspace = true }
 utils = { workspace = true }
+
 [dev-dependencies]
 dylint_testing = "3.0.0"
 rayon = "1.9.0"
+futures = "*"
 
 [package.metadata.rust-analyzer]
 rustc_private = true
