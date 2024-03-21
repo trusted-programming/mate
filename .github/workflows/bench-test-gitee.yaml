@@ -1,0 +1,92 @@
+name: bench-test-gitee
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          [
+            commonlibrary_rust_ylong_http,
+            commonlibrary_rust_ylong_json,
+            commonlibrary_rust_ylong_runtime,
+            communication_ipc,
+            hiviewdfx_hilog,
+            hiviewdfx_hisysevent,
+            hiviewdfx_hitrace,
+            request_request,
+            systemabilitymgr_safwk,
+            systemabilitymgr_samgr,
+          ]
+    steps:
+      - name: clone repo
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_on: error
+          command: git clone https://gitee.com/openharmony/${{ matrix.project }}.git
+
+      - name: Cache Cargo dependencies and binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ matrix.project }}-v2
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.project }}-v2
+            ${{ runner.os }}-cargo-${{ matrix.project }}-
+            ${{ runner.os }}-cargo-
+
+      - name: prepare repository for dylint
+        working-directory: ./${{ matrix.project }}
+        run: |
+          curl -o prepare_repo.sh https://raw.githubusercontent.com/trusted-programming/mate/main/scripts/prepare_repo.sh
+          bash prepare_repo.sh
+
+      - name: count occurrences before
+        working-directory: ./${{ matrix.project }}
+        run: |
+          curl -o counters.sh https://raw.githubusercontent.com/trusted-programming/mate/main/scripts/counters.sh
+          bash counters.sh before
+
+      - name: Lint fix (run 5 times)
+        working-directory: ./${{ matrix.project }}
+        continue-on-error: true
+        run: |
+          for i in {1..5}; do
+            cargo dylint --all --workspace --fix -- --allow-dirty --allow-no-vcs --broken-code --lib --bins
+          done
+
+      - name: cargo check
+        working-directory: ./${{ matrix.project }}
+        run: cargo check
+
+      - name: git diff for .rs files
+        if: always()
+        working-directory: ./${{ matrix.project }}
+        run: git diff -- '*.rs'
+
+      - name: count occurrences after
+        if: always()
+        working-directory: ./${{ matrix.project }}
+        run: bash counters.sh after
+
+      - name: Calculate and print differences
+        if: always()
+        run: |
+          echo "TOTAL OVERVIEW OF RESULTS"
+          echo ""
+          echo "For loop count before: $for_loop_count_before"
+          echo "For loop count after: $for_loop_count_after"
+          echo "For loop count difference: $((for_loop_count_after - for_loop_count_before))"
+          echo ""
+          echo "Iter count before: $iter_count_before"
+          echo "Iter count after: $iter_count_after"
+          echo "Iter count difference: $((iter_count_after - iter_count_before))"
+          echo ""
+          echo "Par iter count before: $par_iter_count_before"
+          echo "Par iter count after: $par_iter_count_after"
+          echo "Par iter count difference: $((par_iter_count_after - par_iter_count_before))"
