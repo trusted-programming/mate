@@ -55,7 +55,10 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
             let src_map = cx.sess().source_map();
 
             // Make sure we ignore cases that require a try_foreach
-            let mut validator = Validator { is_valid: true };
+            let mut validator = Validator {
+                is_valid: true,
+                has_continue: false,
+            };
             validator.visit_expr(body);
             if !validator.is_valid || !check_variables(cx, body) {
                 return;
@@ -68,20 +71,23 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
 
             let iter_snip = span_to_snippet_macro(src_map, arg.span);
             let pat_snip = span_to_snippet_macro(src_map, pat.span);
-            let body_snip = span_to_snippet_macro(src_map, body.span);
+            let mut body_snip = span_to_snippet_macro(src_map, body.span);
 
-            let suggestion = format!("({iter_snip}){mc_snip}.for_each(|{pat_snip}| {body_snip});",)
-                .replace("continue;", "return;");
-
+            // TODO: this needs to be improved
+            if validator.has_continue {
+                body_snip = body_snip.replace("continue", "return");
+            }
             cx.span_lint(
                 FOR_EACH,
                 expr.span,
                 "use a for_each to enable iterator refinement",
                 |diag| {
-                    diag.span_suggestion(
-                        expr.span,
+                    diag.multipart_suggestion(
                         "try using `for_each` on the iterator",
-                        suggestion,
+                        vec![(
+                            expr.span,
+                            format!("({iter_snip}){mc_snip}.for_each(|{pat_snip}| {body_snip});"),
+                        )],
                         Applicability::MachineApplicable,
                     );
                 },
@@ -124,6 +130,7 @@ impl Visitor<'_> for IterExplorer {
 
 struct Validator {
     is_valid: bool,
+    has_continue: bool,
 }
 
 impl Visitor<'_> for Validator {
@@ -133,6 +140,7 @@ impl Visitor<'_> for Validator {
             | ExprKind::Closure(_)
             | ExprKind::Ret(_)
             | ExprKind::Break(_, _) => self.is_valid = false,
+            ExprKind::Continue(_) => self.has_continue = true,
             _ => walk_expr(self, ex),
         }
     }
