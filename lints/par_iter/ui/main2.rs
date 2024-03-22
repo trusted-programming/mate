@@ -100,3 +100,38 @@ fn main() {}
 //     println!("{:?}", doubled_numbers);
 // }
 //
+
+// #[derive(Hash, Eq, PartialEq, Clone)]
+// struct Id(String);
+
+// struct Cmd {
+//     args: HashMap<Id, Arg>,
+// }
+
+// impl Cmd {
+//     fn find(&self, key: &Id) -> Option<&Arg> {
+//         self.args.get(key)
+//     }
+// }
+
+// struct Arg {
+//     requires: Vec<(String, Id)>,
+// }
+
+// //should parallelize
+// fn nested_pars() {
+//     let used_filtered: HashSet<Id> = HashSet::new();
+//     let conflicting_keys: HashSet<Id> = HashSet::new();
+//     let cmd = Cmd {
+//         args: HashMap::new(),
+//     };
+
+//     let required: Vec<Id> = used_filtered
+//         .iter()
+//         .filter_map(|key| cmd.find(key))
+//         .flat_map(|arg| arg.requires.iter().map(|item| &item.1))
+//         .filter(|key| !used_filtered.contains(key) && !conflicting_keys.contains(key))
+//         .chain(used_filtered.iter())
+//         .cloned()
+//         .collect();
+// }
