@@ -109,5 +109,19 @@ warning: found iterator that can be parallelized
 LL |     numbers.iter_mut().for_each(|num| *num *= 2); // Double each number
    |     ^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter_mut()`
 
-warning: 13 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:471:37
+   |
+LL |       let doubled_numbers: Vec<i32> = numbers
+   |  _____________________________________^
+LL | |         .into_iter()
+   | |____________________^
+   |
+help: try using a parallel iterator
+   |
+LL ~     let doubled_numbers: Vec<i32> = numbers
+LL +         .into_par_iter()
+   |
+
+warning: 14 warnings emitted
 

@@ -157,18 +157,22 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
 
             for arg in args {
                 if let hir::ExprKind::Closure(closure) = arg.kind {
+                    let mut params = hir::HirIdSet::default();
                     let mut mut_params = hir::HirIdSet::default();
                     let body = self.cx.tcx.hir().body(closure.body);
 
-                    if self.is_mut {
-                        for param in body.params {
-                            if let hir::PatKind::Binding(_, hir_id, _, _) = param.pat.kind {
+                    for param in body.params {
+                        if let hir::PatKind::Binding(_, hir_id, _, _) = param.pat.kind {
+                            if self.is_mut {
                                 mut_params.insert(hir_id);
+                            } else {
+                                params.insert(hir_id);
                             }
                         }
                     }
 
-                    self.is_valid &= check_variables(self.cx, closure.def_id, body, &mut_params);
+                    self.is_valid &=
+                        check_variables(self.cx, closure.def_id, body, &mut_params, &params);
                 }
             }
         }

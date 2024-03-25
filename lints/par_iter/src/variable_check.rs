@@ -17,6 +17,7 @@ use crate::constants::TRAIT_PATHS;
 
 pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
     mutably_used_vars: hir::HirIdSet,
+    locally_bind_vars: hir::HirIdSet,
     all_vars: FxHashSet<Ty<'tcx>>,
     prev_bind: Option<hir::HirId>,
     /// In async functions, the inner AST is composed of multiple layers until we reach the code
@@ -34,14 +35,17 @@ pub(crate) fn check_variables<'tcx>(
     body_owner: hir::def_id::LocalDefId,
     body: &hir::Body<'tcx>,
     mut_params: &hir::HirIdSet,
+    params: &hir::HirIdSet,
 ) -> bool {
     let MutablyUsedVariablesCtxt {
         mut mutably_used_vars,
         all_vars,
+        mut locally_bind_vars,
         ..
     } = {
         let mut ctx = MutablyUsedVariablesCtxt {
             mutably_used_vars: hir::HirIdSet::default(),
+            locally_bind_vars: hir::HirIdSet::default(),
             all_vars: FxHashSet::default(),
             prev_bind: None,
             prev_move_to_closure: hir::HirIdSet::default(),
@@ -78,7 +82,9 @@ pub(crate) fn check_variables<'tcx>(
     for ty in all_vars {
         res &= is_type_valid(cx, ty);
     }
+    locally_bind_vars.retain(|&item| !params.contains(&item));
     mutably_used_vars.retain(|&item| !mut_params.contains(&item));
+    mutably_used_vars.retain(|&item| !locally_bind_vars.contains(&item));
 
     res &= mutably_used_vars.is_empty();
 
@@ -315,11 +321,10 @@ impl<'tcx> euv::Delegate<'tcx> for MutablyUsedVariablesCtxt<'tcx> {
                     var_path: UpvarPath { hir_id: vid },
                     ..
                 }),
-            base_ty,
             ..
         } = &cmt.place
         {
-            self.all_vars.insert(*base_ty);
+            self.locally_bind_vars.insert(*vid);
             if self.is_in_unsafe_block(id) {
                 self.add_mutably_used_var(*vid);
             }
