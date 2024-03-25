@@ -21,6 +21,8 @@ fold = { path = "lints/fold", features = ["rlib"] }
 par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
 rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
+deprecated_rayon = { path = "lints/deprecated_rayon", features = ["rlib"] }
+
 
 dylint_linting = { version = "3.0.0" }
 
@@ -29,13 +31,14 @@ rustc_private = true
 
 [workspace]
 members = [
+    "lints/rayon_imports",
     "lints/for_each",
     "lints/filter",
     "lints/map",
     "lints/fold",
     "lints/par_fold",
     "lints/par_iter",
-    "lints/rayon_imports",
+    "lints/deprecated_rayon",
     "utils",
 ]
 
