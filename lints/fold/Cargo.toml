@@ -28,26 +28,5 @@ rlib = ["dylint_linting/constituent"]
 name = "fold_main"
 path = "ui/main.rs"
 
-[lints.clippy]
-# GROUPS
-perf = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -2 }
-correctness = { level = "forbid", priority = -3 }
-complexity = { level = "forbid", priority = -4 }
-
-
-# INDIVIDUAL LINTS
-semicolon_if_nothing_returned = { level = "allow", priority = 0 }
-similar_names = { level = "allow", priority = 0 }
-alloc_instead_of_core = { level = "warn", priority = 0 }
-as_conversions = { level = "warn", priority = 0 }
-as_underscore = { level = "warn", priority = 0 }
-dbg_macro = { level = "warn", priority = 0 }
-default_numeric_fallback = { level = "warn", priority = 0 }
-deref_by_slicing = { level = "warn", priority = 0 }
-empty_enum_variants_with_brackets = { level = "warn", priority = 0 }
-empty_structs_with_brackets = { level = "warn", priority = 0 }
-expect_used = { level = "warn", priority = 0 }
-format_push_string = { level = "warn", priority = 0 }
-if_then_some_else_none = { level = "warn", priority = 0 }
-unwrap_used = { level = "warn", priority = 0 }
+[lints]
+workspace = true
