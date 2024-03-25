@@ -13,12 +13,8 @@ jobs:
             commonlibrary_rust_ylong_json,
             commonlibrary_rust_ylong_runtime,
             communication_ipc,
-            hiviewdfx_hilog,
             hiviewdfx_hisysevent,
-            hiviewdfx_hitrace,
             request_request,
-            systemabilitymgr_safwk,
-            systemabilitymgr_samgr,
           ]
     steps:
       - name: clone repo

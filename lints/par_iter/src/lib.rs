@@ -21,7 +21,7 @@ use rustc_errors::Applicability;
 use rustc_hir::intravisit::{walk_expr, Visitor};
 use rustc_hir::{self as hir};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::{self, Ty};
+use rustc_middle::ty::{self};
 use rustc_span::sym;
 use variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
@@ -81,35 +81,25 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                                 .contains(&method_name.ident.as_str())
                             {
                                 if found_iter_method {
-                                    // Exit early on the second iteration method
                                     break;
                                 }
-                                // Mark that we've found an iteration method
                                 found_iter_method = true;
+                                if method_name.ident.as_str() == "iter_mut" {
+                                    is_mut = true;
+                                }
                             }
-                            if method_name.ident.as_str() == "iter_mut" {
-                                is_mut = true;
-                            }
-
                             if !allowed_methods.contains(method_name.ident.as_str()) {
                                 return;
                             }
-
                             top_expr = parent_expr;
                         }
-                        hir::ExprKind::Closure(_) => {
-                            top_expr = parent_expr;
-                        }
-                        _ => {
-                            break;
-                        }
+                        hir::ExprKind::Closure(_) => top_expr = parent_expr,
+                        _ => break,
                     }
                 }
 
-                let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
-
                 // TODO: find a way to deal with iterators returns
-                if check_trait_impl(cx, ty, sym::Iterator) {
+                if check_trait_impl(cx, cx.typeck_results().expr_ty(top_expr), sym::Iterator) {
                     return;
                 }
 
@@ -158,21 +148,16 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
             for arg in args {
                 if let hir::ExprKind::Closure(closure) = arg.kind {
                     let mut params = hir::HirIdSet::default();
-                    let mut mut_params = hir::HirIdSet::default();
                     let body = self.cx.tcx.hir().body(closure.body);
 
                     for param in body.params {
                         if let hir::PatKind::Binding(_, hir_id, _, _) = param.pat.kind {
-                            if self.is_mut {
-                                mut_params.insert(hir_id);
-                            } else {
-                                params.insert(hir_id);
-                            }
+                            params.insert(hir_id);
                         }
                     }
 
                     self.is_valid &=
-                        check_variables(self.cx, closure.def_id, body, &mut_params, &params);
+                        check_variables(self.cx, closure.def_id, body, &params, self.is_mut);
                 }
             }
         }
