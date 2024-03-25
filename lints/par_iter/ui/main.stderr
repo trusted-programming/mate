@@ -89,5 +89,19 @@ warning: found iterator that can be parallelized
 LL |         .chain(used_filtered.iter())
    |                ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `used_filtered.par_iter()`
 
-warning: 11 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:446:38
+   |
+LL |       let names_over_30: Vec<String> = people
+   |  ______________________________________^
+LL | |         .iter()
+   | |_______________^
+   |
+help: try using a parallel iterator
+   |
+LL ~     let names_over_30: Vec<String> = people
+LL +         .par_iter()
+   |
+
+warning: 12 warnings emitted
 

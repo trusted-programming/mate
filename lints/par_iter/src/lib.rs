@@ -71,13 +71,26 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 allowed_methods.extend(get_methods(cx));
 
                 let mut top_expr = *recv;
+                let mut found_iter_method = false;
 
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
                     match parent_expr.kind {
                         hir::ExprKind::MethodCall(method_name, _, _, _) => {
+                            if ["into_iter", "iter", "iter_mut"]
+                                .contains(&method_name.ident.as_str())
+                            {
+                                if found_iter_method {
+                                    // Exit early on the second iteration method
+                                    break;
+                                }
+                                // Mark that we've found an iteration method
+                                found_iter_method = true;
+                            }
+
                             if !allowed_methods.contains(method_name.ident.as_str()) {
                                 return;
                             }
+
                             top_expr = parent_expr;
                         }
                         hir::ExprKind::Closure(_) => {

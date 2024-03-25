@@ -750,7 +750,7 @@ dependencies = [
 
 [[package]]
 name = "mate"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "dylint_linting",
  "dylint_testing",
