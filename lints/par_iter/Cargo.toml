@@ -1,6 +1,6 @@
 [package]
 name = "par_iter"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["authors go here"]
 description = "description goes here"
 edition = "2021"

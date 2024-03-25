@@ -1,7 +1,10 @@
 [package]
 name = "mate"
-version = "0.1.0"
-authors = ["Cameron Low <cameron.low.2018@bristol.ac.uk>", "Luca Carlig <luca.carlig@huawei.com"]
+version = "0.1.1"
+authors = [
+    "Cameron Low <cameron.low.2018@bristol.ac.uk>",
+    "Luca Carlig <luca.carlig@huawei.com",
+]
 description = "library of lints for automatic parallelization"
 edition = "2021"
 publish = false

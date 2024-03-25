@@ -1,5 +1,5 @@
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:47:5
+  --> $DIR/main.rs:64:5
    |
 LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..100).into_par_iter()`
@@ -7,7 +7,7 @@ LL |     (0..100).into_iter().for_each(|x| println!("{:?}", x));
    = note: `#[warn(par_iter)]` on by default
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:71:5
+  --> $DIR/main.rs:88:5
    |
 LL | /     (0..100)
 LL | |         .into_iter()
@@ -20,37 +20,37 @@ LL +         .into_par_iter()
    |
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:106:5
+  --> $DIR/main.rs:123:5
    |
 LL |     list.into_iter().for_each(|x| println!("{:?}", x));
    |     ^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `list.into_par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:122:5
+  --> $DIR/main.rs:139:5
    |
 LL |     (0..10).into_iter().for_each(|x| {
    |     ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..10).into_par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:205:5
+  --> $DIR/main.rs:222:5
    |
 LL |     data.iter()
    |     ^^^^^^^^^^^ help: try using a parallel iterator: `data.par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:232:5
+  --> $DIR/main.rs:249:5
    |
 LL |     numbers.iter().enumerate().for_each(|t| {
    |     ^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:328:30
+  --> $DIR/main.rs:345:30
    |
 LL |     let names: Vec<String> = people.iter().map(|p| p.name.clone()).collect();
    |                              ^^^^^^^^^^^^^ help: try using a parallel iterator: `people.par_iter()`
 
 warning: found iterator that can be parallelized
-  --> $DIR/main.rs:384:19
+  --> $DIR/main.rs:401:19
    |
 LL |           let buf = bufs
    |  ___________________^
@@ -63,5 +63,31 @@ LL ~         let buf = bufs
 LL +             .par_iter()
    |
 
-warning: 8 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:417:29
+   |
+LL |       let required: Vec<Id> = used_filtered
+   |  _____________________________^
+LL | |         .iter()
+   | |_______________^
+   |
+help: try using a parallel iterator
+   |
+LL ~     let required: Vec<Id> = used_filtered
+LL +         .par_iter()
+   |
+
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:420:25
+   |
+LL |         .flat_map(|arg| arg.requires.iter().map(|item| &item.1))
+   |                         ^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `arg.requires.par_iter()`
+
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:422:16
+   |
+LL |         .chain(used_filtered.iter())
+   |                ^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `used_filtered.par_iter()`
+
+warning: 11 warnings emitted
 

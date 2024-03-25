@@ -63,7 +63,6 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
             if !par_iter_traits.is_empty() && is_type_valid(cx, ty) {
                 // TODO: issue with into_par_iter() need to check directly with
                 // parallel iterator
-                // let mut implemented_methods: Vec<&AssocItems> = Vec::new();
 
                 let mut allowed_methods: FxHashSet<&str> =
                     ["into_iter", "iter", "iter_mut", "map_or"]
@@ -74,17 +73,24 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                 let mut top_expr = *recv;
 
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
-                    if let hir::ExprKind::MethodCall(method_name, _, _, _) = parent_expr.kind {
-                        if !allowed_methods.contains(method_name.ident.as_str()) {
-                            return;
+                    match parent_expr.kind {
+                        hir::ExprKind::MethodCall(method_name, _, _, _) => {
+                            if !allowed_methods.contains(method_name.ident.as_str()) {
+                                return;
+                            }
+                            top_expr = parent_expr;
                         }
-                        top_expr = parent_expr;
-                    } else {
-                        break;
+                        hir::ExprKind::Closure(_) => {
+                            top_expr = parent_expr;
+                        }
+                        _ => {
+                            break;
+                        }
                     }
                 }
 
                 let ty: Ty<'_> = cx.typeck_results().expr_ty(top_expr);
+
                 // TODO: find a way to deal with iterators returns
                 if check_trait_impl(cx, ty, sym::Iterator) {
                     return;

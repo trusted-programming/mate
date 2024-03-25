@@ -5,7 +5,7 @@ use core::ascii;
 use futures::io::{self, AsyncWrite, IoSlice};
 use futures::task::{Context, Poll};
 use rayon::prelude::*;
-use std::collections::LinkedList;
+use std::collections::{HashMap, HashSet, LinkedList};
 use std::ops::Range;
 use std::pin::Pin;
 use std::rc::Rc;
@@ -39,6 +39,23 @@ struct ApplicationState {
 }
 
 struct MyWriter;
+
+#[derive(Hash, Eq, PartialEq, Clone)]
+struct Id(String);
+
+struct Cmd {
+    args: HashMap<Id, Arg>,
+}
+
+impl Cmd {
+    fn find(&self, key: &Id) -> Option<&Arg> {
+        self.args.get(key)
+    }
+}
+
+struct Arg {
+    requires: Vec<(String, Id)>,
+}
 
 fn main() {}
 
@@ -387,4 +404,22 @@ impl AsyncWrite for MyWriter {
             .map_or(&[][..], |b| &**b);
         self.poll_write(cx, buf)
     }
+}
+
+//should parallelize
+fn nested_pars() {
+    let used_filtered: HashSet<Id> = HashSet::new();
+    let conflicting_keys: HashSet<Id> = HashSet::new();
+    let cmd = Cmd {
+        args: HashMap::new(),
+    };
+
+    let required: Vec<Id> = used_filtered
+        .par_iter()
+        .filter_map(|key| cmd.find(key))
+        .flat_map(|arg| arg.requires.par_iter().map(|item| &item.1))
+        .filter(|key| !used_filtered.contains(key) && !conflicting_keys.contains(key))
+        .chain(used_filtered.par_iter())
+        .cloned()
+        .collect();
 }
