@@ -72,6 +72,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 
                 let mut top_expr = *recv;
                 let mut found_iter_method = false;
+                let mut is_mut = false;
 
                 while let Some(parent_expr) = get_parent_expr(cx, top_expr) {
                     match parent_expr.kind {
@@ -85,6 +86,9 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                                 }
                                 // Mark that we've found an iteration method
                                 found_iter_method = true;
+                            }
+                            if method_name.ident.as_str() == "iter_mut" {
+                                is_mut = true;
                             }
 
                             if !allowed_methods.contains(method_name.ident.as_str()) {
@@ -109,7 +113,11 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                     return;
                 }
 
-                let mut validator = Validator { cx, is_valid: true };
+                let mut validator = Validator {
+                    cx,
+                    is_valid: true,
+                    is_mut,
+                };
                 validator.visit_expr(top_expr);
                 if !validator.is_valid {
                     return;
@@ -135,6 +143,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
 struct Validator<'a, 'tcx> {
     cx: &'a LateContext<'tcx>,
     is_valid: bool,
+    is_mut: bool,
 }
 
 impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
@@ -148,8 +157,18 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
 
             for arg in args {
                 if let hir::ExprKind::Closure(closure) = arg.kind {
+                    let mut mut_params = hir::HirIdSet::default();
                     let body = self.cx.tcx.hir().body(closure.body);
-                    self.is_valid &= check_variables(self.cx, closure.def_id, body);
+
+                    if self.is_mut {
+                        for param in body.params {
+                            if let hir::PatKind::Binding(_, hir_id, _, _) = param.pat.kind {
+                                mut_params.insert(hir_id);
+                            }
+                        }
+                    }
+
+                    self.is_valid &= check_variables(self.cx, closure.def_id, body, &mut_params);
                 }
             }
         }

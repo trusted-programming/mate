@@ -33,9 +33,10 @@ pub(crate) fn check_variables<'tcx>(
     cx: &LateContext<'tcx>,
     body_owner: hir::def_id::LocalDefId,
     body: &hir::Body<'tcx>,
+    mut_params: &hir::HirIdSet,
 ) -> bool {
     let MutablyUsedVariablesCtxt {
-        mutably_used_vars,
+        mut mutably_used_vars,
         all_vars,
         ..
     } = {
@@ -77,7 +78,10 @@ pub(crate) fn check_variables<'tcx>(
     for ty in all_vars {
         res &= is_type_valid(cx, ty);
     }
+    mutably_used_vars.retain(|&item| !mut_params.contains(&item));
+
     res &= mutably_used_vars.is_empty();
+
     res
 }
 

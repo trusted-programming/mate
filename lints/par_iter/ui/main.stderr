@@ -103,5 +103,11 @@ LL ~     let names_over_30: Vec<String> = people
 LL +         .par_iter()
    |
 
-warning: 12 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:464:5
+   |
+LL |     numbers.iter_mut().for_each(|num| *num *= 2); // Double each number
+   |     ^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `numbers.par_iter_mut()`
+
+warning: 13 warnings emitted
 

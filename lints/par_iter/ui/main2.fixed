@@ -10,40 +10,6 @@ use std::rc::Rc;
 
 fn main() {}
 
-// // 1st should parallelize, 2nd no
-// fn multiple_iter_one_chain() {
-//     let people = vec![
-//         Person {
-//             name: "Alice".to_string(),
-//             age: 25,
-//         },
-//         Person {
-//             name: "Bob".to_string(),
-//             age: 35,
-//         },
-//         Person {
-//             name: "Carol".to_string(),
-//             age: 32,
-//         },
-//     ];
-
-//     let mut counter = 0;
-
-//     let names_over_30: Vec<String> = people
-//         .iter()
-//         .filter(|p| p.age > 30)
-//         .map(|p| p.name.clone())
-//         .collect::<Vec<String>>()
-//         .into_iter()
-//         .map(|name| {
-//             counter += 1;
-//             format!("{}: {}", counter, name)
-//         })
-//         .collect();
-
-//     println!("{:?}", names_over_30);
-// }
-
 // // no
 // pub fn complex_long_chain_no_par() {
 //     let words = vec!["apple", "banana", "cherry", "date"];
@@ -66,13 +32,6 @@ fn main() {}
 //         .for_each(|x| {
 //             println!("{x}");
 //         });
-// }
-
-// // should parallelize
-// fn simple_iter_mut() {
-//     let mut numbers = vec![1, 2, 3, 4, 5];
-//     numbers.iter_mut().for_each(|num| *num *= 2); // Double each number
-//     println!("{:?}", numbers);
 // }
 
 // // should parallelize
