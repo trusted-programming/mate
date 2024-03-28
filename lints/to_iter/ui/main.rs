@@ -112,6 +112,18 @@ fn return_loop_expand() -> Option<()> {
     Some(())
 }
 
+fn return_loop_continue() -> Option<()> {
+    let num_workers = 10;
+    let locals = vec![1, 2, 3, 4, 5];
+    for index in 0..num_workers {
+        if index == 1 {
+            continue;
+        }
+        let item = locals.get(index)?;
+    }
+    Some(())
+}
+
 // for_each
 fn local_into_iter() {
     let thread_num = 10;
@@ -120,4 +132,15 @@ fn local_into_iter() {
     for _ in 0..thread_num {
         locals.push(LocalQueue::new());
     }
+}
+
+fn try_mut_var() -> Option<char> {
+    let char = 'c';
+    let esc = char.escape_debug();
+    for c in esc {
+        if c.is_ascii() {
+            return None;
+        }
+    }
+    Some(char)
 }

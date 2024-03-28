@@ -12,19 +12,19 @@ extern crate rustc_span;
 
 mod variable_check;
 
-use clippy_utils::source::snippet_indent;
-use clippy_utils::{higher::ForLoop, ty::implements_trait};
+use clippy_utils::{higher::ForLoop, source::snippet_indent, ty::implements_trait};
 use clippy_utils::{is_lang_item_or_ctor, is_res_lang_ctor, ty};
+
 use rustc_errors::Applicability;
 use rustc_hir::{
+    def::Res,
     intravisit::{walk_expr, Visitor},
-    Expr, ExprKind,
+    ByRef, Expr, ExprKind, LangItem, Local, Node, PatKind, QPath,
 };
-use rustc_hir::{LangItem, QPath};
+use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::Ty;
 use rustc_span::symbol::sym;
 
-use rustc_lint::{LateContext, LateLintPass, LintContext};
 use utils::span_to_snippet_macro;
 use variable_check::check_variables;
 
@@ -70,6 +70,34 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
                 return;
             }
 
+            let src_map = cx.sess().source_map();
+
+            // If the argument is a variable, we need to make sure it is mutable so that it works
+            // with try_for_each.
+            let mut add_mut_sugg = None;
+            if validator.ret_ty.is_some()
+                && let ExprKind::Path(ref qpath) = arg.kind
+                && let Some(parent_node) = match cx.qpath_res(qpath, expr.hir_id) {
+                    Res::Local(hir_id) => Some(cx.tcx.parent_hir_node(hir_id)),
+                    _ => None,
+                }
+                && let Some(pat) = match parent_node {
+                    Node::Local(Local { pat, .. }) => Some(*pat),
+                    _ => None,
+                }
+            {
+                if let PatKind::Binding(m, _, id, op) = pat.kind {
+                    if !m.1.is_mut() {
+                        let ref_snip = if m.0 == ByRef::Yes { "ref " } else { "" };
+                        let ident_snip = span_to_snippet_macro(src_map, id.span);
+                        let osp_snip =
+                            op.map_or(String::new(), |p| span_to_snippet_macro(src_map, p.span));
+                        add_mut_sugg =
+                            Some((pat.span, format!("{ref_snip}mut {ident_snip}{osp_snip}")));
+                    }
+                }
+            }
+
             let mut used_vars = check_variables(cx, body);
             used_vars
                 .all_vars
@@ -78,47 +106,17 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
                 return;
             }
 
-            // Check if we need to convert to iterator explicitly
-            let src_map = cx.sess().source_map();
-            let mut iter_snip = span_to_snippet_macro(src_map, arg.span);
-
-            // Check if the argument is a Range
-            let is_range = {
-                let range_items = [
-                    LangItem::Range,
-                    LangItem::RangeTo,
-                    LangItem::RangeFrom,
-                    LangItem::RangeToInclusive,
-                    LangItem::RangeInclusiveNew,
-                ];
-
-                let langs = cx.tcx.lang_items();
-                let mut range_langs = langs.iter().filter(|(li, _)| range_items.contains(&li));
-                match &arg.kind {
-                    ExprKind::Struct(QPath::LangItem(li, _), _, _) => {
-                        range_langs.any(|(ri, _)| ri == *li)
-                    }
-                    ExprKind::Call(l, _) => {
-                        if let ExprKind::Path(QPath::LangItem(li, _)) = &l.kind {
-                            range_langs.any(|(ri, _)| ri == *li)
-                        } else {
-                            false
-                        }
-                    }
-                    _ => false,
-                }
-            };
-
             // Check if we need to convert to an iterator.
             // We explicitly call into_iter on Range to allow for better linting with par_iter.
             // TODO: When do we need extra parens
+            let mut iter_snip = span_to_snippet_macro(src_map, arg.span);
             let ty = cx.typeck_results().expr_ty(arg);
             if !cx
                 .tcx
                 .lang_items()
                 .iterator_trait()
                 .map_or(false, |id| implements_trait(cx, ty, id, &[]))
-                || is_range
+                || is_range_expr(cx, arg)
             {
                 iter_snip = format!("({iter_snip}).into_iter()");
             } else {
@@ -148,13 +146,9 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
             } else {
                 Some(body.span)
             };
+
             let mut body_snip =
                 body_span.map_or(String::new(), |s| span_to_snippet_macro(src_map, s));
-
-            if validator.has_continue && validator.ret_ty.is_none() {
-                body_snip = body_snip.replace("continue", "return");
-            }
-
             // Make sure to terminate the last statement with a semicolon
             // TODO: Are we missing anything here
             if !body_snip.trim_end().ends_with([';', '}']) {
@@ -163,12 +157,12 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
 
             // Acquire the indentation of the loop expr and it's body for nicer formatting in the
             // sugggestion
-            let outer_indent = snippet_indent(cx, expr.span).unwrap_or("".to_string());
+            let outer_indent = snippet_indent(cx, expr.span).unwrap_or_default();
             let indent = body_span
-                .map_or(None, |s| snippet_indent(cx, s))
+                .and_then(|s| snippet_indent(cx, s))
                 .unwrap_or(format!("{outer_indent}    "));
 
-            let sugg = if let Some(ty) = validator.ret_ty {
+            let sugg_msg = if let Some(ty) = validator.ret_ty {
                 let constr = if ty::is_type_diagnostic_item(cx, ty, sym::Option) {
                     "Some"
                 } else if ty::is_type_diagnostic_item(cx, ty, sym::Result) {
@@ -176,24 +170,57 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
                 } else {
                     return;
                 };
+                if validator.has_continue {
+                    body_snip = body_snip.replace("continue", &format!("return {constr}(())"));
+                }
                 format!(
                     "{iter_snip}.try_for_each(|{pat_snip}| {{\n{indent}{body_snip}\n{indent}return {constr}(());\n{outer_indent}}})?;"
                 )
             } else {
+                if validator.has_continue {
+                    body_snip = body_snip.replace("continue", "return");
+                }
                 format!(
                     "{iter_snip}.for_each(|{pat_snip}| {{\n{indent}{body_snip}\n{outer_indent}}});"
                 )
             };
+            let mut suggs = vec![(expr.span, sugg_msg)];
+            if let Some(add_mut) = add_mut_sugg {
+                suggs.push(add_mut);
+            }
 
             cx.span_lint(TO_ITER, expr.span, "use an iterator", |diag| {
-                diag.span_suggestion(
-                    expr.span,
+                diag.multipart_suggestion(
                     "try using an iterator",
-                    sugg,
+                    suggs,
                     Applicability::MachineApplicable,
                 );
             });
         }
+    }
+}
+
+fn is_range_expr(cx: &LateContext<'_>, arg: &Expr<'_>) -> bool {
+    let range_items = [
+        LangItem::Range,
+        LangItem::RangeTo,
+        LangItem::RangeFrom,
+        LangItem::RangeToInclusive,
+        LangItem::RangeInclusiveNew,
+    ];
+
+    let langs = cx.tcx.lang_items();
+    let mut range_langs = langs.iter().filter(|(li, _)| range_items.contains(li));
+    match &arg.kind {
+        ExprKind::Struct(QPath::LangItem(li, _), _, _) => range_langs.any(|(ri, _)| ri == *li),
+        ExprKind::Call(l, _) => {
+            if let ExprKind::Path(QPath::LangItem(li, _)) = &l.kind {
+                range_langs.any(|(ri, _)| ri == *li)
+            } else {
+                false
+            }
+        }
+        _ => false,
     }
 }
 
@@ -250,10 +277,10 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
                             return;
                         }
                     }
-                    ExprKind::Call(l, _) => match &l.kind {
-                        // Must statically know that the return value is
-                        // Err(_) or Try::from_residual(_)
-                        ExprKind::Path(qp) => {
+                    ExprKind::Call(l, _) => {
+                        if let ExprKind::Path(qp) = &l.kind {
+                            // Must statically know that the return value is
+                            // Err(_) or Try::from_residual(_)
                             let res = self.cx.typeck_results().qpath_res(qp, l.hir_id);
                             let is_err = ty::is_type_diagnostic_item(self.cx, v_ty, sym::Result)
                                 && is_res_lang_ctor(self.cx, res, LangItem::ResultErr);
@@ -266,12 +293,11 @@ impl<'a, 'tcx> Visitor<'_> for Validator<'a, 'tcx> {
                                 self.is_valid = false;
                                 return;
                             }
-                        }
-                        _ => {
+                        } else {
                             self.is_valid = false;
                             return;
                         }
-                    },
+                    }
                     _ => {
                         self.is_valid = false;
                         return;

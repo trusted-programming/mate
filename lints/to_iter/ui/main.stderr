@@ -103,7 +103,29 @@ LL +     })?;
    |
 
 warning: use an iterator
-  --> $DIR/main.rs:120:5
+  --> $DIR/main.rs:118:5
+   |
+LL | /     for index in 0..num_workers {
+LL | |         if index == 1 {
+LL | |             continue;
+LL | |         }
+LL | |         let item = locals.get(index)?;
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (0..num_workers).into_iter().try_for_each(|index| {
+LL +         if index == 1 {
+LL +             return Some(());
+LL +         }
+LL +         let item = locals.get(index)?;
+LL +         return Some(());
+LL +     })?;
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:132:5
    |
 LL | /     for _ in 0..thread_num {
 LL | |         locals.push(LocalQueue::new());
@@ -117,5 +139,26 @@ LL +         locals.push(LocalQueue::new());
 LL +     });
    |
 
-warning: 7 warnings emitted
+warning: use an iterator
+  --> $DIR/main.rs:140:5
+   |
+LL | /     for c in esc {
+LL | |         if c.is_ascii() {
+LL | |             return None;
+LL | |         }
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     let mut esc = char.escape_debug();
+LL ~     (esc).try_for_each(|c| {
+LL +         if c.is_ascii() {
+LL +             return None;
+LL +         }
+LL +         return Some(());
+LL +     })?;
+   |
+
+warning: 9 warnings emitted
 
