@@ -1,0 +1,31 @@
+[package]
+name = "to_iter"
+version = "0.1.0"
+authors = ["authors go here"]
+description = "description goes here"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+dylint_linting = "3.0.0"
+
+clippy_utils = { workspace = true }
+utils = { workspace = true }
+[dev-dependencies]
+dylint_testing = "3.0.0"
+
+[package.metadata.rust-analyzer]
+rustc_private = true
+
+[features]
+rlib = ["dylint_linting/constituent"]
+
+[[example]]
+name = "to_iter_main"
+path = "ui/main.rs"
+
+[lints]
+workspace = true

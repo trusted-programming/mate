@@ -12,9 +12,10 @@ pub fn register_lints(sess: &rustc_session::Session, lint_store: &mut rustc_lint
     // PHASE 0
     rayon_imports::register_lints(sess, lint_store);
     // PHASE 1
-    for_each::register_lints(sess, lint_store);
+    //for_each::register_lints(sess, lint_store);
+    to_iter::register_lints(sess, lint_store);
     // PHASE 2
-    filter::register_lints(sess, lint_store);
+    //filter::register_lints(sess, lint_store);
     // PHASE 3
     fold::register_lints(sess, lint_store);
     // PHASE 4

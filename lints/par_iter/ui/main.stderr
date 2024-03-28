@@ -123,5 +123,11 @@ LL ~     let doubled_numbers: Vec<i32> = numbers
 LL +         .into_par_iter()
    |
 
-warning: 14 warnings emitted
+warning: found iterator that can be parallelized
+  --> $DIR/main.rs:486:5
+   |
+LL |     (0..num_workers).into_iter().try_for_each(|index| {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try using a parallel iterator: `(0..num_workers).into_par_iter()`
+
+warning: 15 warnings emitted
 

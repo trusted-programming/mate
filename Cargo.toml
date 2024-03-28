@@ -14,6 +14,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
+to_iter = { path = "lints/to_iter", features = ["rlib"] }
 for_each = { path = "lints/for_each", features = ["rlib"] }
 filter = { path = "lints/filter", features = ["rlib"] }
 map = { path = "lints/map", features = ["rlib"] }
@@ -32,6 +33,7 @@ rustc_private = true
 [workspace]
 members = [
     "lints/rayon_imports",
+    "lints/to_iter",
     "lints/for_each",
     "lints/filter",
     "lints/map",

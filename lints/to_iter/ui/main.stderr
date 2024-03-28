@@ -1,0 +1,121 @@
+warning: use an iterator
+  --> $DIR/main.rs:42:5
+   |
+LL | /     for x in 1..=100 {
+LL | |         println!("{x}");
+LL | |     }
+   | |_____^
+   |
+   = note: `#[warn(to_iter)]` on by default
+help: try using an iterator
+   |
+LL ~     (1..=100).into_iter().for_each(|x| {
+LL +         println!("{x}");
+LL +     });
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:51:5
+   |
+LL | /     for a in vec_a {
+LL | |         if a == 1 {
+LL | |             continue;
+LL | |         }
+LL | |         dbg!(a);
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (vec_a).into_iter().for_each(|a| {
+LL +         dbg!(a);
+LL +     });
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:77:9
+   |
+LL | /         for b in &vec_b {
+LL | |             dbg!(a, b);
+LL | |         }
+   | |_________^
+   |
+help: try using an iterator
+   |
+LL ~         (&vec_b).into_iter().for_each(|b| {
+LL +             dbg!(a, b);
+LL +         });
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:87:5
+   |
+LL | /     for _ in 0..some_num.len() {
+LL | |         let (_, upload_size) = (true, 99);
+LL | |         file_total_size += upload_size;
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (0..some_num.len()).into_iter().for_each(|_| {
+LL +         let (_, upload_size) = (true, 99);
+LL +         file_total_size += upload_size;
+LL +     });
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:97:5
+   |
+LL | /     for index in 0..num_workers {
+LL | |         let item = locals.get(index)?;
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (0..num_workers).into_iter().try_for_each(|index| {
+LL +         let item = locals.get(index)?;
+LL +         return Some(());
+LL +     })?;
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:106:5
+   |
+LL | /     for index in 0..num_workers {
+LL | |         let item = locals.get(index);
+LL | |         if item.is_none() {
+LL | |             return None;
+LL | |         }
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (0..num_workers).into_iter().try_for_each(|index| {
+LL +         let item = locals.get(index);
+LL +         if item.is_none() {
+LL +             return None;
+LL +         }
+LL +         return Some(());
+LL +     })?;
+   |
+
+warning: use an iterator
+  --> $DIR/main.rs:120:5
+   |
+LL | /     for _ in 0..thread_num {
+LL | |         locals.push(LocalQueue::new());
+LL | |     }
+   | |_____^
+   |
+help: try using an iterator
+   |
+LL ~     (0..thread_num).into_iter().for_each(|_| {
+LL +         locals.push(LocalQueue::new());
+LL +     });
+   |
+
+warning: 7 warnings emitted
+

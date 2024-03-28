@@ -478,3 +478,14 @@ fn mut_var_declared_in_closure() {
         .collect();
     println!("{:?}", doubled_numbers);
 }
+
+// should parallelize
+fn return_loop() -> Option<()> {
+    let num_workers = 10;
+    let locals = vec![1, 2, 3, 4, 5];
+    (0..num_workers).into_iter().try_for_each(|index| {
+        let item = locals.get(index)?;
+        return Some(());
+    })?;
+    Some(())
+}
