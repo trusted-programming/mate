@@ -20,6 +20,7 @@ jobs:
             brendanzab/codespan,
             rust-lang/regex,
             dtolnay/syn,
+            huggingface/candle,
           ]
     steps:
       - uses: actions/checkout@v4
