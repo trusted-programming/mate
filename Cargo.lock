@@ -205,17 +205,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deprecated_rayon"
-version = "0.1.1"
-dependencies = [
- "clippy_utils",
- "dylint_linting",
- "dylint_testing",
- "rayon",
- "utils",
-]
-
-[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -763,7 +752,6 @@ dependencies = [
 name = "mate"
 version = "0.1.4"
 dependencies = [
- "deprecated_rayon",
  "dylint_linting",
  "dylint_testing",
  "filter",

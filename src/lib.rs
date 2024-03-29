@@ -21,5 +21,4 @@ pub fn register_lints(sess: &rustc_session::Session, lint_store: &mut rustc_lint
     // PHASE 4
     par_fold::register_lints(sess, lint_store);
     par_iter::register_lints(sess, lint_store);
-    deprecated_rayon::register_lints(sess, lint_store);
 }

@@ -22,8 +22,6 @@ fold = { path = "lints/fold", features = ["rlib"] }
 par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
 rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
-deprecated_rayon = { path = "lints/deprecated_rayon", features = ["rlib"] }
-
 
 dylint_linting = { version = "3.0.0" }
 
@@ -40,7 +38,6 @@ members = [
     "lints/fold",
     "lints/par_fold",
     "lints/par_iter",
-    "lints/deprecated_rayon",
     "utils",
 ]
 
