@@ -15,14 +15,16 @@ extern crate rustc_trait_selection;
 mod constants;
 mod variable_check;
 
-use clippy_utils::{get_parent_expr, get_trait_def_id};
+use clippy_utils::get_parent_expr;
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::{walk_expr, Visitor};
 use rustc_hir::{self as hir};
+use rustc_infer::infer::type_variable::{TypeVariableOrigin, TypeVariableOriginKind};
+use rustc_infer::infer::TyCtxtInferExt;
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::{self};
-use rustc_span::sym;
+use rustc_span::{sym, Span};
+use rustc_trait_selection::traits::ObligationCtxt;
 use variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
     is_type_valid,
@@ -54,21 +56,22 @@ dylint_linting::declare_late_lint! {
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     // TODO: implement check crate to check if rayon is present
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx hir::Expr<'_>) {
-        if let hir::ExprKind::MethodCall(path, recv, _args, _span) = &expr.kind
+        if let hir::ExprKind::MethodCall(path, recv, _args, span) = &expr.kind
             && let Some(suggestion) = generate_suggestion(cx, expr, path)
         {
             let ty = cx.typeck_results().expr_ty(recv);
-
             let par_iter_traits = check_implements_par_iter(cx, recv);
             if !par_iter_traits.is_empty() && is_type_valid(cx, ty) {
                 // TODO: issue with into_par_iter() need to check directly with
                 // parallel iterator
-
+                //
                 let mut allowed_methods: FxHashSet<&str> =
                     ["into_iter", "iter", "iter_mut", "map_or"]
                         .into_iter()
                         .collect();
-                allowed_methods.extend(get_methods(cx));
+                for par_iter_trait in par_iter_traits {
+                    allowed_methods.extend(get_methods(cx, par_iter_trait, ty, span));
+                }
 
                 let mut top_expr = *recv;
                 let mut found_iter_method = false;
@@ -164,25 +167,35 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
         walk_expr(self, ex)
     }
 }
+use clippy_utils::ty::make_normalized_projection;
 
-fn get_methods<'tcx>(cx: &LateContext<'tcx>) -> Vec<&'tcx str> {
-    let mut res = Vec::new();
-    if let (Some(parallel_iterator_def_id), Some(parallel_indexed_iterator_def_id)) = (
-        get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"]),
-        get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"]),
-    ) {
-        let ids = &[parallel_iterator_def_id, parallel_indexed_iterator_def_id];
-        for def_id in ids {
-            let associated_items = cx.tcx.associated_items(def_id);
-            // Filter out only methods from the associated items
-            let methods: Vec<&str> = associated_items
-                .in_definition_order()
-                .filter(|item| matches!(item.kind, ty::AssocKind::Fn))
-                .map(|item| item.name.as_str())
-                .collect();
-            res.extend(methods);
-        }
+fn get_methods<'tcx>(
+    cx: &LateContext<'tcx>,
+    trait_def_id: hir::def_id::DefId,
+    original_ty: rustc_middle::ty::Ty,
+    span: Span,
+) -> Vec<&'tcx str> {
+    let res = Vec::new();
+
+    let tcx = cx.tcx;
+    let infcx = tcx.infer_ctxt().build();
+    let origin = TypeVariableOrigin {
+        kind: TypeVariableOriginKind::TypeInference,
+        span,
+    };
+    let ty_var = infcx.next_ty_var(origin);
+    if let Some(param_env) =
+    // FIXME: what is assoc_ty
+    if let Some(projection) =
+        make_normalized_projection(tcx, param_env, trait_def_id, sym::Item, vec![])
+    {
+        let ocx = ObligationCtxt::new(&infcx);
+
+        // FIXME: what is obligation
+        ocx.register_obligation(obligation);
+        let some_errors = ocx.select_where_possible();
     }
+
     res
 }
 
