@@ -19,10 +19,13 @@ use clippy_utils::get_parent_expr;
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::{walk_expr, Visitor};
-use rustc_hir::{self as hir};
+use rustc_hir::{self as hir, GenericArg};
 use rustc_infer::infer::type_variable::{TypeVariableOrigin, TypeVariableOriginKind};
 use rustc_infer::infer::TyCtxtInferExt;
+use rustc_infer::traits::{Obligation, ObligationCause};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
+use rustc_middle::query::Key;
+use rustc_middle::ty::{AliasTy, Binder, ProjectionPredicate};
 use rustc_span::{sym, Span};
 use rustc_trait_selection::traits::ObligationCtxt;
 use variable_check::{
@@ -179,22 +182,43 @@ fn get_methods<'tcx>(
 
     let tcx = cx.tcx;
     let infcx = tcx.infer_ctxt().build();
-    let origin = TypeVariableOrigin {
-        kind: TypeVariableOriginKind::TypeInference,
-        span,
-    };
-    let ty_var = infcx.next_ty_var(origin);
-    if let Some(param_env) =
-    // FIXME: what is assoc_ty
-    if let Some(projection) =
-        make_normalized_projection(tcx, param_env, trait_def_id, sym::Item, vec![])
+
+    if let Some(ty_def_id) = original_ty.ty_def_id()
+        && let param_env = tcx.param_env(ty_def_id)
+        && let Some(projection) =
+            make_normalized_projection(tcx, param_env, trait_def_id, sym::Item, vec![])
     {
+        let cause = ObligationCause::dummy();
+        let origin = TypeVariableOrigin {
+            kind: TypeVariableOriginKind::TypeInference,
+            span,
+        };
+        let projection_ty = infcx.next_ty_var(origin);
+
+        let projection = ProjectionPredicate {
+            projection_ty: AliasTy::new(tcx, trait_def_id, vec![]),
+            term: tcx.mk_ty_var(tcx.next_ty_var_id()), // Or the specific type you expect the projection to equal.
+        };
+
+        let norm_ty = infcx.next_ty_var(TypeVariableOrigin {
+            kind: TypeVariableOriginKind::TypeInference,
+            span: cause.span,
+        });
+
+        // Create a projection obligation
+        let obligation = Obligation::new(
+            cause.clone(),
+            param_env,
+            projection.to_predicate(tcx, norm_ty),
+        );
+
         let ocx = ObligationCtxt::new(&infcx);
 
         // FIXME: what is obligation
         ocx.register_obligation(obligation);
         let some_errors = ocx.select_where_possible();
     }
+    // FIXME: what is assoc_ty
 
     res
 }
