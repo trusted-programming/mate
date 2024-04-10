@@ -15,18 +15,17 @@ extern crate rustc_trait_selection;
 mod constants;
 mod variable_check;
 
-use clippy_utils::get_parent_expr;
+use clippy_utils::{get_parent_expr, get_trait_def_id};
 use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::{walk_expr, Visitor};
-use rustc_hir::{self as hir, GenericArg};
+use rustc_hir::{self as hir};
 use rustc_infer::infer::type_variable::{TypeVariableOrigin, TypeVariableOriginKind};
 use rustc_infer::infer::TyCtxtInferExt;
 use rustc_infer::traits::{Obligation, ObligationCause};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::query::Key;
-use rustc_middle::ty::{AliasTy, Binder, ProjectionPredicate};
-use rustc_span::{sym, Span};
+use rustc_middle::ty::{self, GenericArgs};
+use rustc_span::sym;
 use rustc_trait_selection::traits::ObligationCtxt;
 use variable_check::{
     check_implements_par_iter, check_trait_impl, check_variables, generate_suggestion,
@@ -59,12 +58,11 @@ dylint_linting::declare_late_lint! {
 impl<'tcx> LateLintPass<'tcx> for ParIter {
     // TODO: implement check crate to check if rayon is present
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx hir::Expr<'_>) {
-        if let hir::ExprKind::MethodCall(path, recv, _args, span) = &expr.kind
+        if let hir::ExprKind::MethodCall(path, recv, _args, _span) = &expr.kind
             && let Some(suggestion) = generate_suggestion(cx, expr, path)
         {
-            let ty = cx.typeck_results().expr_ty(recv);
             let par_iter_traits = check_implements_par_iter(cx, recv);
-            if !par_iter_traits.is_empty() && is_type_valid(cx, ty) {
+            if !par_iter_traits.is_empty() && is_type_valid(cx, cx.typeck_results().expr_ty(recv)) {
                 // TODO: issue with into_par_iter() need to check directly with
                 // parallel iterator
                 //
@@ -72,8 +70,8 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                     ["into_iter", "iter", "iter_mut", "map_or"]
                         .into_iter()
                         .collect();
-                for par_iter_trait in par_iter_traits {
-                    allowed_methods.extend(get_methods(cx, par_iter_trait, ty, span));
+                for into_par_iter_trait in par_iter_traits {
+                    allowed_methods.extend(get_all_methods(cx, into_par_iter_trait, *recv));
                 }
 
                 let mut top_expr = *recv;
@@ -170,55 +168,59 @@ impl<'a, 'tcx> hir::intravisit::Visitor<'_> for Validator<'a, 'tcx> {
         walk_expr(self, ex)
     }
 }
-use clippy_utils::ty::make_normalized_projection;
 
-fn get_methods<'tcx>(
+fn get_all_methods<'tcx>(
     cx: &LateContext<'tcx>,
-    trait_def_id: hir::def_id::DefId,
-    original_ty: rustc_middle::ty::Ty,
-    span: Span,
+    into_iter_trait: hir::def_id::DefId,
+    original_expr: &hir::Expr,
 ) -> Vec<&'tcx str> {
-    let res = Vec::new();
-
-    let tcx = cx.tcx;
-    let infcx = tcx.infer_ctxt().build();
-
-    if let Some(ty_def_id) = original_ty.ty_def_id()
-        && let param_env = tcx.param_env(ty_def_id)
-        && let Some(projection) =
-            make_normalized_projection(tcx, param_env, trait_def_id, sym::Item, vec![])
-    {
-        let cause = ObligationCause::dummy();
-        let origin = TypeVariableOrigin {
-            kind: TypeVariableOriginKind::TypeInference,
-            span,
-        };
-        let projection_ty = infcx.next_ty_var(origin);
-
-        let projection = ProjectionPredicate {
-            projection_ty: AliasTy::new(tcx, trait_def_id, vec![]),
-            term: tcx.mk_ty_var(tcx.next_ty_var_id()), // Or the specific type you expect the projection to equal.
-        };
-
-        let norm_ty = infcx.next_ty_var(TypeVariableOrigin {
-            kind: TypeVariableOriginKind::TypeInference,
-            span: cause.span,
-        });
-
-        // Create a projection obligation
-        let obligation = Obligation::new(
-            cause.clone(),
-            param_env,
-            projection.to_predicate(tcx, norm_ty),
-        );
-
+    let mut res = Vec::new();
+    if let (Some(parallel_iterator_def_id), Some(parallel_indexed_iterator_def_id)) = (
+        get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"]),
+        get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"]),
+    ) {
+        let tcx = cx.tcx;
+        let infcx = tcx.infer_ctxt().build();
         let ocx = ObligationCtxt::new(&infcx);
+        let param_env = tcx.param_env(into_iter_trait);
 
-        // FIXME: what is obligation
-        ocx.register_obligation(obligation);
-        let some_errors = ocx.select_where_possible();
+        // Create a new inference variable, ?new
+        let ty = infcx.next_ty_var(TypeVariableOrigin {
+            kind: TypeVariableOriginKind::TypeInference,
+            span: original_expr.span,
+        });
+        let args = GenericArgs::for_item(tcx, into_iter_trait, |_, _| ty.into());
+        let projection_ty = ty::AliasTy::new(tcx, into_iter_trait, args);
+        let projection = ty::Binder::dummy(ty::PredicateKind::Clause(ty::ClauseKind::Projection(
+            ty::ProjectionPredicate {
+                projection_ty,
+                term: ty.into(),
+            },
+        )));
+        ocx.register_obligation(Obligation::new(
+            tcx,
+            ObligationCause::dummy(),
+            param_env,
+            projection,
+        ));
+        let errors = ocx.select_where_possible();
+        if errors.is_empty() {
+            dbg!("no errors"); // TODO: do something else here
+        }
+
+        // TODO: use the previous steps to determine which ids should be run
+        let ids = &[parallel_iterator_def_id, parallel_indexed_iterator_def_id];
+        for def_id in ids {
+            let associated_items = cx.tcx.associated_items(def_id);
+            // Filter out only methods from the associated items
+            let methods: Vec<&str> = associated_items
+                .in_definition_order()
+                .filter(|item| matches!(item.kind, ty::AssocKind::Fn))
+                .map(|item| item.name.as_str())
+                .collect();
+            res.extend(methods);
+        }
     }
-    // FIXME: what is assoc_ty
 
     res
 }
