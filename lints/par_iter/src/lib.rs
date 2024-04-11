@@ -189,8 +189,8 @@ fn get_all_methods<'tcx>(
             kind: TypeVariableOriginKind::TypeInference,
             span: original_expr.span,
         });
-        let args = GenericArgs::for_item(tcx, into_iter_trait, |_, _| ty.into());
-        let projection_ty = ty::AliasTy::new(tcx, into_iter_trait, args);
+
+        let projection_ty = ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty());
         let projection = ty::Binder::dummy(ty::PredicateKind::Clause(ty::ClauseKind::Projection(
             ty::ProjectionPredicate {
                 projection_ty,
