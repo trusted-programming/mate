@@ -190,19 +190,29 @@ fn get_all_methods<'tcx>(
             span: original_expr.span,
         });
 
-        let projection_ty = ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty());
-        let projection = ty::Binder::dummy(ty::PredicateKind::Clause(ty::ClauseKind::Projection(
-            ty::ProjectionPredicate {
-                projection_ty,
-                term: ty.into(),
-            },
-        )));
-        ocx.register_obligation(Obligation::new(
+        // Construct the alias type
+        let alias_ty = ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty());
+
+        let projection_predicate = ty::ProjectionPredicate {
+            projection_ty: alias_ty,
+            term: infcx
+                .next_ty_var(TypeVariableOrigin {
+                    // Create a fresh type variable for the resulting type
+                    kind: TypeVariableOriginKind::TypeInference,
+                    span: original_expr.span,
+                })
+                .into(),
+        };
+
+        let obligation = Obligation::new(
             tcx,
             ObligationCause::dummy(),
             param_env,
-            projection,
-        ));
+            ty::Binder::dummy(projection_predicate),
+        );
+
+        ocx.register_obligation(obligation);
+
         let errors = ocx.select_where_possible();
         if errors.is_empty() {
             dbg!("no errors"); // TODO: do something else here
