@@ -65,7 +65,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
             if !par_iter_traits.is_empty() && is_type_valid(cx, cx.typeck_results().expr_ty(recv)) {
                 // TODO: issue with into_par_iter() need to check directly with
                 // parallel iterator
-                //
+
                 let mut allowed_methods: FxHashSet<&str> =
                     ["into_iter", "iter", "iter_mut", "map_or"]
                         .into_iter()
@@ -190,33 +190,21 @@ fn get_all_methods<'tcx>(
             span: original_expr.span,
         });
 
-        // Construct the alias type
-        let alias_ty = ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty());
+        let projection = ty::Binder::dummy(ty::PredicateKind::Clause(ty::ClauseKind::Projection(
+            ty::ProjectionPredicate {
+                projection_ty: ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty()),
+                term: ty.into(),
+            },
+        )));
 
-        let projection_predicate = ty::ProjectionPredicate {
-            projection_ty: alias_ty,
-            term: infcx
-                .next_ty_var(TypeVariableOrigin {
-                    // Create a fresh type variable for the resulting type
-                    kind: TypeVariableOriginKind::TypeInference,
-                    span: original_expr.span,
-                })
-                .into(),
-        };
-
-        let obligation = Obligation::new(
-            tcx,
-            ObligationCause::dummy(),
-            param_env,
-            ty::Binder::dummy(projection_predicate),
-        );
+        let obligation = Obligation::new(tcx, ObligationCause::dummy(), param_env, projection);
 
         ocx.register_obligation(obligation);
 
-        let errors = ocx.select_where_possible();
-        if errors.is_empty() {
-            dbg!("no errors"); // TODO: do something else here
-        }
+        // let errors = ocx.select_where_possible();
+        // if errors.is_empty() {
+        //     dbg!("no errors"); // TODO: do something else here
+        // }
 
         // TODO: use the previous steps to determine which ids should be run
         let ids = &[parallel_iterator_def_id, parallel_indexed_iterator_def_id];
