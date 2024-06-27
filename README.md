@@ -36,7 +36,6 @@ often switching from an iterator to a parallel iterator will result in loss of o
 ## How to run
 
 The next three steps install Dylint and run all of this repository's lints on a workspace:
-
 prerequisites: - rustup - latest version of rust stable if not run `rustup update`
 
 1. Install `cargo-dylint` and `dylint-link`:
