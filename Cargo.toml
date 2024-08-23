@@ -23,7 +23,7 @@ par_fold = { path = "lints/par_fold", features = ["rlib"] }
 par_iter = { path = "lints/par_iter", features = ["rlib"] }
 rayon_imports = { path = "lints/rayon_imports", features = ["rlib"] }
 
-dylint_linting = { version = "3.0.0" }
+dylint_linting = { version = "3.1.2" }
 
 [package.metadata.rust-analyzer]
 rustc_private = true
@@ -42,7 +42,7 @@ members = [
 ]
 
 [dev-dependencies]
-dylint_testing = "3.0.0"
+dylint_testing = "3.1.2"
 
 [workspace.dependencies]
 clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "aa2c94e416d346341fe3a875160a7d064596f4d3" }
@@ -62,6 +62,7 @@ complexity = { level = "forbid", priority = -4 }
 # INDIVIDUAL LINTS
 semicolon_if_nothing_returned = { level = "allow", priority = 0 }
 similar_names = { level = "allow", priority = 0 }
+too_many_lines = { level = "allow", priority = 0 }
 alloc_instead_of_core = { level = "warn", priority = 0 }
 as_conversions = { level = "warn", priority = 0 }
 as_underscore = { level = "warn", priority = 0 }

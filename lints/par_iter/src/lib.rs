@@ -71,7 +71,7 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                         .into_iter()
                         .collect();
                 for into_par_iter_trait in par_iter_traits {
-                    allowed_methods.extend(get_all_methods(cx, into_par_iter_trait, *recv));
+                    allowed_methods.extend(get_all_methods(cx, into_par_iter_trait, recv));
                 }
 
                 let mut top_expr = *recv;

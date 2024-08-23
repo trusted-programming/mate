@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
-  cargo install cargo-dylint dylint-link
+  cargo +stable install cargo-dylint@3.0.0 dylint-link@3.0.0
 fi
 
 CARGO_TOML="Cargo.toml"
