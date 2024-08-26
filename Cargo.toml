@@ -1,6 +1,6 @@
 [package]
 name = "mate"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
     "Cameron Low <cameron.low.2018@bristol.ac.uk>",
     "Luca Carlig <luca.carlig@huawei.com",
