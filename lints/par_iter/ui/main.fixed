@@ -217,7 +217,7 @@ pub fn complex_long_chain() {
     let multiplier = 2;
     let threshold = 5;
     let my_string = "Hello".to_string();
-    let my_enum = MyEnum::B; // Construct the enum variant
+    let my_enum: MyEnum = MyEnum::B; // Construct the enum variant
 
     data.par_iter()
         .map(|&x| {

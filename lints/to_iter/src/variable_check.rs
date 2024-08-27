@@ -1,14 +1,13 @@
-use clippy_utils::visitors::for_each_expr_with_closures;
+use clippy_utils::visitors::for_each_expr;
 use rustc_hash::FxHashSet;
 use rustc_hir as hir;
 use rustc_hir_typeck::expr_use_visitor as euv;
-use rustc_infer::infer::{InferCtxt, TyCtxtInferExt};
 use rustc_lint::LateContext;
 use rustc_middle::{
-    hir::map::associated_body,
     mir::FakeReadCause,
     ty::{self, Ty, UpvarId, UpvarPath},
 };
+use rustc_span::def_id::LocalDefId;
 use std::{collections::HashSet, ops::ControlFlow};
 
 pub struct UsedVariablesCtxt<'tcx> {
@@ -39,28 +38,23 @@ pub fn check_variables<'tcx>(
         prev_bind: None,
         prev_move_to_closure: hir::HirIdSet::default(),
     };
-    let infcx = cx.tcx.infer_ctxt().build();
-    euv::ExprUseVisitor::new(
-        &mut ctx,
-        &infcx,
-        body_owner,
-        cx.param_env,
-        cx.typeck_results(),
-    )
-    .walk_expr(ex);
+
+    euv::ExprUseVisitor::for_clippy(cx, body_owner, &mut ctx)
+        .walk_expr(ex)
+        .into_ok();
 
     let mut checked_closures = FxHashSet::default();
 
     // We retrieve all the closures declared in the function because they will not be found
     // by `euv::Delegate`.
-    let mut closures: FxHashSet<hir::def_id::LocalDefId> = FxHashSet::default();
-    for_each_expr_with_closures(cx, ex, |expr| {
+    let mut closures: FxHashSet<LocalDefId> = FxHashSet::default();
+    for_each_expr(cx, ex, |expr| {
         if let hir::ExprKind::Closure(closure) = expr.kind {
             closures.insert(closure.def_id);
         }
         ControlFlow::<()>::Continue(())
     });
-    check_closures(&mut ctx, cx, &infcx, &mut checked_closures, closures);
+    check_closures(&mut ctx, cx, &mut checked_closures, closures);
 
     ctx
 }
@@ -68,7 +62,6 @@ pub fn check_variables<'tcx>(
 pub fn check_closures<'tcx, S: ::std::hash::BuildHasher>(
     ctx: &mut UsedVariablesCtxt<'tcx>,
     cx: &LateContext<'tcx>,
-    infcx: &InferCtxt<'tcx>,
     checked_closures: &mut HashSet<hir::def_id::LocalDefId, S>,
     closures: HashSet<hir::def_id::LocalDefId, S>,
 ) {
@@ -81,12 +74,13 @@ pub fn check_closures<'tcx, S: ::std::hash::BuildHasher>(
         ctx.prev_move_to_closure.clear();
         if let Some(body) = cx
             .tcx
-            .opt_hir_node_by_def_id(closure)
-            .and_then(associated_body)
+            .hir_node_by_def_id(closure)
+            .associated_body()
             .map(|(_, body_id)| hir.body(body_id))
         {
-            euv::ExprUseVisitor::new(ctx, infcx, closure, cx.param_env, cx.typeck_results())
-                .consume_body(body);
+            euv::ExprUseVisitor::for_clippy(cx, closure, &mut *ctx)
+                .consume_body(body)
+                .into_ok();
         }
     }
 }

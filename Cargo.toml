@@ -1,9 +1,9 @@
 [package]
 name = "mate"
-version = "0.1.5"
+version = "0.1.6"
 authors = [
-    "Cameron Low <cameron.low.2018@bristol.ac.uk>",
     "Luca Carlig <luca.carlig@huawei.com",
+    "Cameron Low <cameron.low.2018@bristol.ac.uk>",
 ]
 description = "library of lints for automatic parallelization"
 edition = "2021"
@@ -45,8 +45,12 @@ members = [
 dylint_testing = "3.1.2"
 
 [workspace.dependencies]
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "aa2c94e416d346341fe3a875160a7d064596f4d3" }
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "37f4fbb92913586b73a35772efd00eccd1cbbe13" }
 utils = { path = "utils" }
+
+[workspace.lints.rust.unexpected_cfgs]
+level = "deny"
+check-cfg = ["cfg(dylint_lib, values(any()))"]
 
 [workspace.metadata.dylint]
 clibraries = [{ path = "../mate" }]

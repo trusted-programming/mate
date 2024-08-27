@@ -1,12 +1,12 @@
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]
 #![feature(let_chains)]
+#![feature(unwrap_infallible)]
 
 extern crate rustc_errors;
 extern crate rustc_hash;
 extern crate rustc_hir;
 extern crate rustc_hir_typeck;
-extern crate rustc_infer;
 extern crate rustc_middle;
 extern crate rustc_span;
 
@@ -19,8 +19,9 @@ use rustc_errors::Applicability;
 use rustc_hir::{
     def::Res,
     intravisit::{walk_expr, Visitor},
-    ByRef, Expr, ExprKind, LangItem, Local, Node, PatKind, QPath,
+    ByRef, Expr, ExprKind, LangItem, Node, PatKind, QPath,
 };
+
 use rustc_lint::{LateContext, LateLintPass, LintContext};
 use rustc_middle::ty::Ty;
 use rustc_span::symbol::sym;
@@ -75,27 +76,24 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
             // If the argument is a variable, we need to make sure it is mutable so that it works
             // with try_for_each.
             let mut add_mut_sugg = None;
+
             if validator.ret_ty.is_some()
                 && let ExprKind::Path(ref qpath) = arg.kind
-                && let Some(parent_node) = match cx.qpath_res(qpath, expr.hir_id) {
-                    Res::Local(hir_id) => Some(cx.tcx.parent_hir_node(hir_id)),
-                    _ => None,
-                }
-                && let Some(pat) = match parent_node {
-                    Node::Local(Local { pat, .. }) => Some(*pat),
-                    _ => None,
-                }
+                && let Res::Local(hir_id) = cx.qpath_res(qpath, expr.hir_id)
+                && let Node::LetStmt(stmt) = cx.tcx.parent_hir_node(hir_id)
+                && let PatKind::Binding(m, _, id, op) = stmt.pat.kind
+                && m.1.is_not()
             {
-                if let PatKind::Binding(m, _, id, op) = pat.kind {
-                    if !m.1.is_mut() {
-                        let ref_snip = if m.0 == ByRef::Yes { "ref " } else { "" };
-                        let ident_snip = span_to_snippet_macro(src_map, id.span);
-                        let osp_snip =
-                            op.map_or(String::new(), |p| span_to_snippet_macro(src_map, p.span));
-                        add_mut_sugg =
-                            Some((pat.span, format!("{ref_snip}mut {ident_snip}{osp_snip}")));
-                    }
-                }
+                let ref_snip = match m.0 {
+                    ByRef::Yes(_) => "ref ",
+                    ByRef::No => "",
+                };
+                let ident_snip = span_to_snippet_macro(src_map, id.span);
+                let osp_snip = op.map_or(String::new(), |p| span_to_snippet_macro(src_map, p.span));
+                add_mut_sugg = Some((
+                    stmt.pat.span,
+                    format!("{ref_snip}mut {ident_snip}{osp_snip}"),
+                ));
             }
 
             let mut used_vars = check_variables(cx, body);
@@ -189,7 +187,8 @@ impl<'tcx> LateLintPass<'tcx> for ToIter {
                 suggs.push(add_mut);
             }
 
-            cx.span_lint(TO_ITER, expr.span, "use an iterator", |diag| {
+            cx.span_lint(TO_ITER, expr.span, |diag| {
+                diag.primary_message("use an iterator");
                 diag.multipart_suggestion(
                     "try using an iterator",
                     suggs,

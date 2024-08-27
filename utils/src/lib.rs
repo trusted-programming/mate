@@ -17,7 +17,7 @@ use rustc_span::{Span, SyntaxContext};
 
 pub fn is_local_def(stmt: &Stmt) -> bool {
     match stmt.kind {
-        StmtKind::Local(_) => true,
+        StmtKind::Let(_) => true,
         StmtKind::Expr(e) | StmtKind::Semi(e) => {
             if let ExprKind::Block(b, _) = e.kind {
                 b.stmts.iter().all(is_local_def) && b.expr.is_none()

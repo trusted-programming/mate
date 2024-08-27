@@ -1,12 +1,12 @@
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]
 #![feature(let_chains)]
+#![feature(unwrap_infallible)]
 
 extern crate rustc_errors;
 extern crate rustc_hash;
 extern crate rustc_hir;
 extern crate rustc_hir_typeck;
-extern crate rustc_infer;
 extern crate rustc_middle;
 
 mod variable_check;
@@ -77,21 +77,17 @@ impl<'tcx> LateLintPass<'tcx> for ForEach {
             if validator.has_continue {
                 body_snip = body_snip.replace("continue", "return");
             }
-            cx.span_lint(
-                FOR_EACH,
-                expr.span,
-                "use a for_each to enable iterator refinement",
-                |diag| {
-                    diag.multipart_suggestion(
-                        "try using `for_each` on the iterator",
-                        vec![(
-                            expr.span,
-                            format!("({iter_snip}){mc_snip}.for_each(|{pat_snip}| {body_snip});"),
-                        )],
-                        Applicability::MachineApplicable,
-                    );
-                },
-            );
+            cx.span_lint(FOR_EACH, expr.span, |diag| {
+                diag.primary_message("use a for_each to enable iterator refinement");
+                diag.multipart_suggestion(
+                    "try using `for_each` on the iterator",
+                    vec![(
+                        expr.span,
+                        format!("({iter_snip}){mc_snip}.for_each(|{pat_snip}| {body_snip});"),
+                    )],
+                    Applicability::MachineApplicable,
+                );
+            });
         }
     }
 }

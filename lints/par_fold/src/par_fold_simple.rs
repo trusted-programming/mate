@@ -56,7 +56,8 @@ impl<'tcx> LateLintPass<'tcx> for ParFoldSimple {
             ir.suggestions
                 .extend_from_slice(&[(path.ident.span, suggestion), (id_expr.span, suggestion2)]);
 
-            cx.span_lint(WARN_PAR_FOLD_SIMPLE, expr.span, "sequential fold", |diag| {
+            cx.span_lint(WARN_PAR_FOLD_SIMPLE, expr.span, |diag| {
+                diag.primary_message("sequential fold");
                 diag.multipart_suggestion(
                     "try using a parallel fold on the iterator",
                     ir.suggestions,

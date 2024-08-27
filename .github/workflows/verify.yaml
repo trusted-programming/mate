@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  toolchain: nightly-2024-02-22
+  toolchain: nightly-2024-07-25
 
 jobs:
   fmt:
@@ -35,7 +35,7 @@ jobs:
       - name: Install dylint
         run: |
           if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
-            cargo +stable install cargo-dylint@3.0.0 dylint-link@3.0.0
+            cargo install cargo-dylint dylint-link
           fi
 
       - name: cargo fmt --check
@@ -71,7 +71,7 @@ jobs:
       - name: Install dylint
         run: |
           if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
-            cargo +stable install cargo-dylint@3.0.0 dylint-link@3.0.0
+            cargo install cargo-dylint dylint-link
           fi
 
       - name: cargo clippy
@@ -103,7 +103,7 @@ jobs:
       - name: Install dylint
         run: |
           if ! command -v cargo-dylint &> /dev/null || ! command -v dylint-link &> /dev/null; then
-            cargo +stable install cargo-dylint@3.0.0 dylint-link@3.0.0
+            cargo install cargo-dylint dylint-link
           fi
 
       - name: cargo test

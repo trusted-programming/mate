@@ -59,19 +59,15 @@ impl LateLintPass<'_> for RayonPrelude {
         let import_suggestion = "#[allow(unused_imports)]\nuse rayon::prelude::*;\n".to_string();
         let inject_use_span = md.spans.inject_use_span;
         if !use_statement_visitor.has_import {
-            cx.span_lint(
-                RAYON_PRELUDE,
-                inject_use_span,
-                "rayon::prelude::* is not imported",
-                |diag| {
-                    diag.span_suggestion(
-                        inject_use_span,
-                        "consider adding this import",
-                        import_suggestion,
-                        rustc_errors::Applicability::MachineApplicable,
-                    );
-                },
-            );
+            cx.span_lint(RAYON_PRELUDE, inject_use_span, |diag| {
+                diag.primary_message("rayon::prelude::* is not imported");
+                diag.span_suggestion(
+                    inject_use_span,
+                    "consider adding this import",
+                    import_suggestion,
+                    rustc_errors::Applicability::MachineApplicable,
+                );
+            });
         }
     }
 }

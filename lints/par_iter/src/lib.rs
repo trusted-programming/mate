@@ -1,6 +1,7 @@
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]
 #![feature(let_chains)]
+#![feature(unwrap_infallible)]
 
 extern crate rustc_data_structures;
 extern crate rustc_errors;
@@ -20,7 +21,6 @@ use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::intravisit::{walk_expr, Visitor};
 use rustc_hir::{self as hir};
-use rustc_infer::infer::type_variable::{TypeVariableOrigin, TypeVariableOriginKind};
 use rustc_infer::infer::TyCtxtInferExt;
 use rustc_infer::traits::{Obligation, ObligationCause};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
@@ -117,18 +117,14 @@ impl<'tcx> LateLintPass<'tcx> for ParIter {
                     return;
                 }
 
-                cx.span_lint(
-                    PAR_ITER,
-                    expr.span,
-                    "found iterator that can be parallelized",
-                    |diag| {
-                        diag.multipart_suggestion(
-                            "try using a parallel iterator",
-                            vec![(expr.span, suggestion)],
-                            Applicability::MachineApplicable,
-                        );
-                    },
-                );
+                cx.span_lint(PAR_ITER, expr.span, |diag| {
+                    diag.primary_message("found iterator that can be parallelized");
+                    diag.multipart_suggestion(
+                        "try using a parallel iterator",
+                        vec![(expr.span, suggestion)],
+                        Applicability::MachineApplicable,
+                    );
+                });
             }
         }
     }
@@ -176,8 +172,8 @@ fn get_all_methods<'tcx>(
 ) -> Vec<&'tcx str> {
     let mut res = Vec::new();
     if let (Some(parallel_iterator_def_id), Some(parallel_indexed_iterator_def_id)) = (
-        get_trait_def_id(cx, &["rayon", "iter", "ParallelIterator"]),
-        get_trait_def_id(cx, &["rayon", "iter", "IndexedParallelIterator"]),
+        get_trait_def_id(cx.tcx, &["rayon", "iter", "ParallelIterator"]),
+        get_trait_def_id(cx.tcx, &["rayon", "iter", "IndexedParallelIterator"]),
     ) {
         let tcx = cx.tcx;
         let infcx = tcx.infer_ctxt().build();
@@ -185,14 +181,11 @@ fn get_all_methods<'tcx>(
         let param_env = tcx.param_env(into_iter_trait);
 
         // Create a new inference variable, ?new
-        let ty = infcx.next_ty_var(TypeVariableOrigin {
-            kind: TypeVariableOriginKind::TypeInference,
-            span: original_expr.span,
-        });
+        let ty = infcx.next_ty_var(original_expr.span);
 
         let projection = ty::Binder::dummy(ty::PredicateKind::Clause(ty::ClauseKind::Projection(
             ty::ProjectionPredicate {
-                projection_ty: ty::AliasTy::new(tcx, into_iter_trait, GenericArgs::empty()),
+                projection_term: ty::AliasTerm::new(tcx, into_iter_trait, GenericArgs::empty()),
                 term: ty.into(),
             },
         )));

@@ -1,17 +1,18 @@
-use clippy_utils::{get_trait_def_id, ty::implements_trait, visitors::for_each_expr_with_closures};
+use clippy_utils::{get_trait_def_id, ty::implements_trait, visitors::for_each_expr};
+
 use rustc_hash::FxHashSet;
 use rustc_hir as hir;
 use rustc_hir_typeck::expr_use_visitor as euv;
-use rustc_infer::infer::{InferCtxt, TyCtxtInferExt};
+use rustc_infer::infer::TyCtxtInferExt;
 use rustc_lint::{LateContext, LintContext};
 use rustc_middle::{
-    hir::map::associated_body,
     mir::FakeReadCause,
     ty::{self, Ty, TyCtxt, UpvarId, UpvarPath},
 };
-use rustc_span::{sym, Symbol};
+use rustc_span::{def_id::LocalDefId, sym, Symbol};
 use rustc_trait_selection::infer::InferCtxtExt;
-use std::ops::ControlFlow;
+
+use core::ops::ControlFlow;
 
 use crate::constants::TRAIT_PATHS;
 
@@ -33,7 +34,7 @@ pub(crate) struct MutablyUsedVariablesCtxt<'tcx> {
 pub(crate) fn check_variables<'tcx>(
     cx: &LateContext<'tcx>,
     body_owner: hir::def_id::LocalDefId,
-    body: &hir::Body<'tcx>,
+    body: &'tcx hir::Body<'_>,
     params: &hir::HirIdSet,
     is_mut: bool,
 ) -> bool {
@@ -53,28 +54,23 @@ pub(crate) fn check_variables<'tcx>(
             async_closures: FxHashSet::default(),
             tcx: cx.tcx,
         };
-        let infcx = cx.tcx.infer_ctxt().build();
-        euv::ExprUseVisitor::new(
-            &mut ctx,
-            &infcx,
-            body_owner,
-            cx.param_env,
-            cx.typeck_results(),
-        )
-        .consume_body(body);
+
+        euv::ExprUseVisitor::for_clippy(cx, body_owner, &mut ctx)
+            .consume_body(body)
+            .into_ok();
 
         let mut checked_closures = FxHashSet::default();
 
         // We retrieve all the closures declared in the function because they will not be found
         // by `euv::Delegate`.
-        let mut closures: FxHashSet<hir::def_id::LocalDefId> = FxHashSet::default();
-        for_each_expr_with_closures(cx, cx.tcx.hir().body(body.id()).value, |expr| {
+        let mut closures: FxHashSet<LocalDefId> = FxHashSet::default();
+        for_each_expr(cx, body, |expr| {
             if let hir::ExprKind::Closure(closure) = expr.kind {
                 closures.insert(closure.def_id);
             }
             ControlFlow::<()>::Continue(())
         });
-        check_closures(&mut ctx, cx, &infcx, &mut checked_closures, closures);
+        check_closures(&mut ctx, cx, &mut checked_closures, closures);
 
         ctx
     };
@@ -95,7 +91,6 @@ pub(crate) fn check_variables<'tcx>(
 pub(crate) fn check_closures<'tcx>(
     ctx: &mut MutablyUsedVariablesCtxt<'tcx>,
     cx: &LateContext<'tcx>,
-    infcx: &InferCtxt<'tcx>,
     checked_closures: &mut FxHashSet<hir::def_id::LocalDefId>,
     closures: FxHashSet<hir::def_id::LocalDefId>,
 ) {
@@ -108,12 +103,13 @@ pub(crate) fn check_closures<'tcx>(
         ctx.prev_move_to_closure.clear();
         if let Some(body) = cx
             .tcx
-            .opt_hir_node_by_def_id(closure)
-            .and_then(associated_body)
+            .hir_node_by_def_id(closure)
+            .associated_body()
             .map(|(_, body_id)| hir.body(body_id))
         {
-            euv::ExprUseVisitor::new(ctx, infcx, closure, cx.param_env, cx.typeck_results())
-                .consume_body(body);
+            euv::ExprUseVisitor::for_clippy(cx, closure, &mut *ctx)
+                .consume_body(body)
+                .into_ok();
         }
     }
 }
@@ -341,7 +337,7 @@ pub(crate) fn check_implements_par_iter<'tcx>(
     let mut implemented_traits = Vec::new();
 
     for trait_path in TRAIT_PATHS {
-        if let Some(trait_def_id) = get_trait_def_id(cx, trait_path) {
+        if let Some(trait_def_id) = get_trait_def_id(cx.tcx, trait_path) {
             if cx
                 .tcx
                 .infer_ctxt()

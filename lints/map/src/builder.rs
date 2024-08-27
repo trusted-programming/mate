@@ -113,7 +113,8 @@ impl<'tcx> LateLintPass<'tcx> for $struct_name {
             let suggestion =
                 format!("{coll}.extend({recv}.map(|{pat}| {{ {local_defs} {args} }}).collect::<{}<{type_args}>>())", $type_name);
 
-            cx.span_lint($lint_name, expr.span, "implicit map", |diag| {
+            cx.span_lint($lint_name, expr.span, |diag| {
+                diag.primary_message("implicit map");
                 diag.span_suggestion(
                     expr.span,
                     "try using `map` instead",

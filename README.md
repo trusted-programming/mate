@@ -41,7 +41,7 @@ prerequisites: - rustup - latest version of rust stable if not run `rustup updat
 1. Install `cargo-dylint` and `dylint-link`:
 
    ```sh
-   cargo +stable install cargo-dylint@3.0.0 dylint-link@3.0.0
+   cargo install cargo-dylint dylint-link
    ```
 
 2. Add the following to the workspace's `Cargo.toml` file:
