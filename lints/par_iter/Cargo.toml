@@ -16,7 +16,7 @@ clippy_utils = { workspace = true }
 utils = { workspace = true }
 
 [dev-dependencies]
-dylint_testing = "3.2.1"
+dylint_testing = "4.0.0"
 rayon = "1.9.0"
 futures = "0.3.30"
 
