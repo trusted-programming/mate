@@ -147,7 +147,21 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.63",
+]
+
+[[package]]
+name = "cargo_metadata"
+version = "0.19.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd5eb614ed4c27c5d706420e4320fbe3216ab31fa1c33cd8246ac36dae4479ba"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -327,9 +341,9 @@ checksum = "22752a1003c06a3f04f9ea66e4899f97132a1888276fee2d5fbe5f6820eee274"
 dependencies = [
  "ansi_term",
  "anyhow",
- "cargo_metadata",
+ "cargo_metadata 0.18.1",
  "dirs",
- "dylint_internal",
+ "dylint_internal 3.2.1",
  "is-terminal",
  "log",
  "once_cell",
@@ -349,7 +363,7 @@ dependencies = [
  "ansi_term",
  "anyhow",
  "bitflags 2.6.0",
- "cargo_metadata",
+ "cargo_metadata 0.18.1",
  "git2",
  "home",
  "if_chain",
@@ -359,22 +373,37 @@ dependencies = [
  "regex",
  "rust-embed",
  "serde",
- "thiserror",
+ "thiserror 1.0.63",
+ "toml 0.8.19",
+]
+
+[[package]]
+name = "dylint_internal"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be48281a00c2a156f23a19699cb375fd6421ba9ad25f76eca6f8abac05f24b8e"
+dependencies = [
+ "anyhow",
+ "cargo_metadata 0.19.2",
+ "once_cell",
+ "regex",
+ "serde",
+ "thiserror 2.0.12",
  "toml 0.8.19",
 ]
 
 [[package]]
 name = "dylint_linting"
-version = "3.2.1"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0338d94b92ffeece90a8ba405c6d051f18b4483558728537a333daa3bb422616"
+checksum = "ee26289a3a13858d9f63ce4fb171a671dfd79f0aea83af0c069d6c5845bc8bc8"
 dependencies = [
- "cargo_metadata",
- "dylint_internal",
+ "cargo_metadata 0.19.2",
+ "dylint_internal 4.0.1",
  "paste",
  "rustversion",
  "serde",
- "thiserror",
+ "thiserror 2.0.12",
  "toml 0.8.19",
 ]
 
@@ -385,10 +414,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e1581603a3fc49b8ede8bed50f5e2d719ce607572f5e5d5d06f200f3285448a"
 dependencies = [
  "anyhow",
- "cargo_metadata",
+ "cargo_metadata 0.18.1",
  "compiletest_rs",
  "dylint",
- "dylint_internal",
+ "dylint_internal 3.2.1",
  "env_logger",
  "once_cell",
  "regex",
@@ -956,9 +985,9 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.86"
+version = "1.0.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e719e8df665df0d1c8fbfd238015744736151d4445ec0836b8e628aae103b77"
+checksum = "a31971752e70b8b2686d7e46ec17fb38dad4051d94024c88df49b667caea9c84"
 dependencies = [
  "unicode-ident",
 ]
@@ -1020,7 +1049,7 @@ checksum = "ba009ff324d1fc1b900bd1fdb31564febe58a8ccc8a6fdbb93b543d33b13ca43"
 dependencies = [
  "getrandom",
  "libredox",
- "thiserror",
+ "thiserror 1.0.63",
 ]
 
 [[package]]
@@ -1111,7 +1140,7 @@ checksum = "70f5b7fc8060f4f8373f9381a630304b42e1183535d9beb1d3f596b236c9106a"
 dependencies = [
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.63",
  "tracing",
 ]
 
@@ -1233,9 +1262,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "syn"
-version = "2.0.76"
+version = "2.0.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "578e081a14e0cefc3279b0472138c513f37b41a08d5a3cca9b6e4e8ceb6cd525"
+checksum = "e02e925281e18ffd9d640e234264753c43edc62d64b2d4cf898f1bc5e75f3fc2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1285,7 +1314,16 @@ version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.63",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "567b8a2dae586314f7be2a752ec7474332959c6460e02bde30d702a66d488708"
+dependencies = [
+ "thiserror-impl 2.0.12",
 ]
 
 [[package]]
@@ -1293,6 +1331,17 @@ name = "thiserror-impl"
 version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",

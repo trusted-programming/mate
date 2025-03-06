@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 clippy_utils = { workspace = true }
 utils = { workspace = true }
 
-dylint_linting = "3.2.1"
+dylint_linting = "4.0.1"
 
 [dev-dependencies]
 dylint_testing = "3.2.1"
